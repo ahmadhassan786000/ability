@@ -63,43 +63,51 @@ export default function ForgotPasswordScreen() {
     }
 
     setLoading(true);
-    try {
-      await resetPassword(email.trim());
-      // If email is correct, go directly to password reset screen
-      setShowPasswordReset(true);
-    } catch (err) {
-      setErrors({ email: err.message || 'Failed to verify email. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    
+    // Small delay to help with keyboard dismissal
+    setTimeout(async () => {
+      try {
+        await resetPassword(email.trim());
+        // If email is correct, go directly to password reset screen
+        setShowPasswordReset(true);
+      } catch (err) {
+        setErrors({ email: err.message || 'Failed to verify email. Please try again.' });
+      } finally {
+        setLoading(false);
+      }
+    }, 100);
   };
 
   const handleSetNewPassword = async () => {
     if (!validatePasswordForm()) return;
 
     setLoading(true);
-    try {
-      // Update password in auth service
-      await updatePassword(email.trim(), newPassword);
-      
-      Alert.alert(
-        'Password Updated Successfully! 🎉',
-        'Your password has been changed. You can now sign in with your new password.',
-        [{
-          text: 'Continue to Login',
-          onPress: () => {
-            router.push({
-              pathname: '/(auth)/login',
-              params: { email: email.trim() }
-            });
-          }
-        }]
-      );
-    } catch (err) {
-      setErrors({ general: err.message || 'Failed to update password. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    
+    // Small delay to help with keyboard dismissal
+    setTimeout(async () => {
+      try {
+        // Update password in auth service
+        await updatePassword(email.trim(), newPassword);
+        
+        Alert.alert(
+          'Password Updated Successfully! 🎉',
+          'Your password has been changed. You can now sign in with your new password.',
+          [{
+            text: 'Continue to Login',
+            onPress: () => {
+              router.push({
+                pathname: '/(auth)/login',
+                params: { email: email.trim() }
+              });
+            }
+          }]
+        );
+      } catch (err) {
+        setErrors({ general: err.message || 'Failed to update password. Please try again.' });
+      } finally {
+        setLoading(false);
+      }
+    }, 100);
   };
 
   const handleBackToLogin = () => {

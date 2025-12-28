@@ -24,6 +24,7 @@ export default function ProfileScreen() {
   const { logout, user, updateProfile } = useAuth();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editedUsername, setEditedUsername] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // Initialize edited username with current username
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
   };
 
   const handleUsernameSave = async () => {
+    setIsSaving(true);
     try {
       // Update the user profile with new displayName
       await updateProfile({ displayName: editedUsername.trim() });
@@ -52,6 +54,8 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error updating username:', error);
       Alert.alert('Error', 'Failed to update username. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -120,9 +124,14 @@ export default function ProfileScreen() {
                     placeholderTextColor="#94A3B8"
                   />
                   <View style={styles.editButtons}>
-                    <TouchableOpacity onPress={handleUsernameSave} style={styles.saveButton}>
-                      <Text style={styles.saveButtonText}>Save</Text>
-                    </TouchableOpacity>
+                    <Button
+                      title="Save"
+                      onPress={handleUsernameSave}
+                      loading={isSaving}
+                      disabled={isSaving}
+                      style={styles.saveButton}
+                      size="sm"
+                    />
                     <TouchableOpacity onPress={handleUsernameCancel} style={styles.cancelButton}>
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
@@ -322,14 +331,7 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     backgroundColor: '#10B981',
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: Typography.fontWeight.semiBold,
-    fontSize: Typography.fontSize.sm,
+    marginRight: Spacing.xs,
   },
   cancelButton: {
     flex: 1,
@@ -337,6 +339,7 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
+    marginLeft: Spacing.xs,
   },
   cancelButtonText: {
     color: '#FFFFFF',

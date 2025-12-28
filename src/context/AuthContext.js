@@ -1,5 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useEffect, useState } from "react";
-import { getCurrentUser, login, resetPassword, signOut, signup, updateUserProfile } from "../services/authService";
+import { getCurrentUser, login, resetPassword, signOut, signup, testFirebaseConnection, updateUserProfile } from "../services/authService";
 
 
 export const AuthContext = createContext();
@@ -14,11 +15,40 @@ export const AuthProvider = ({ children }) => {
 
   const initializeApp = async () => {
     try {
+      // Test Firebase connection
+      await testFirebaseConnection();
+      
+      // Clear any old AsyncStorage data that might interfere with Firebase
+      await clearOldLocalData();
+      
       // Check current auth state
       await checkAuthState();
     } catch (error) {
       console.error("Error initializing app:", error);
       setLoading(false);
+    }
+  };
+
+  const clearOldLocalData = async () => {
+    try {
+      // Clear any old user data keys that might be cached locally
+      const keysToRemove = [
+        'user',
+        'userData', 
+        'currentUser',
+        'authUser',
+        'userProfile',
+        'loginData',
+        'userInfo',
+        'chats',
+        'chatHistory',
+        'messages'
+      ];
+      
+      await AsyncStorage.multiRemove(keysToRemove);
+      console.log("Cleared old local storage data");
+    } catch (error) {
+      console.log("No old data to clear or error clearing:", error);
     }
   };
 
@@ -78,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error("No user logged in");
       }
       
-      // Update user profile data in AsyncStorage and users list
+      // Update user profile data in Firebase
       const updatedUser = await updateUserProfile(user.uid, profileData);
       setUser(updatedUser);
       

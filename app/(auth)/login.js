@@ -56,10 +56,27 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      const result = await login(email.trim(), password);
       router.replace('/welcome');
     } catch (err) {
-      Alert.alert('Login Failed', err.message || 'Please check your credentials and try again.');
+      // Show specific error message with helpful suggestions
+      const errorMessage = err.message || 'Please check your credentials and try again.';
+      
+      if (err.message && err.message.includes('No account found')) {
+        Alert.alert(
+          'Account Not Found', 
+          'No account exists with this email address. Would you like to create a new account?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Sign Up', 
+              onPress: () => router.push('/(auth)/signup')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Login Failed', errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -97,6 +114,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="next"
               error={errors.email}
               leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
             />
@@ -109,6 +127,8 @@ export default function LoginScreen() {
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
               error={errors.password}
               leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
             />
@@ -117,6 +137,7 @@ export default function LoginScreen() {
               title="Sign In"
               onPress={handleLogin}
               loading={loading}
+              dismissKeyboard={true}
               style={styles.loginButton}
             />
 

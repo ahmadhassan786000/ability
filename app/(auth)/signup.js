@@ -73,27 +73,48 @@ export default function SignupScreen() {
     if (!validateForm()) return;
 
     setLoading(true);
-    try {
-      await signup(formData.username.trim(), formData.email.trim(), formData.password);
-      Alert.alert(
-        'Account Created Successfully! 🎉', 
-        `Welcome ${formData.username}! Your account has been created. You can now sign in with your credentials.`,
-        [{ 
-          text: 'Continue to Login', 
-          onPress: () => {
-            // Navigate to login with pre-filled email
-            router.push({
-              pathname: '/(auth)/login',
-              params: { email: formData.email.trim() }
-            });
-          }
-        }]
-      );
-    } catch (err) {
-      Alert.alert('Signup Failed', err.message || 'Unable to create account. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    
+    // Small delay to help with keyboard dismissal
+    setTimeout(async () => {
+      try {
+        await signup(formData.username.trim(), formData.email.trim(), formData.password);
+        Alert.alert(
+          'Account Created Successfully!', 
+          // `Welcome ${formData.username}! Your account has been created. You can now sign in with your credentials.`,
+          [{ 
+            text: 'Continue to Login', 
+            onPress: () => {
+              // Navigate to login with pre-filled email
+              router.push({
+                pathname: '/(auth)/login',
+                params: { email: formData.email.trim() }
+              });
+            }
+          }]
+        );
+      } catch (err) {
+        // Show specific error message
+        const errorMessage = err.message || 'Unable to create account. Please try again.';
+        
+        if (err.message && err.message.includes('already exists')) {
+          Alert.alert(
+            'Account Already Exists', 
+            'An account with this email already exists. Would you like to sign in instead?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Sign In', 
+                onPress: () => router.push('/(auth)/login')
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Signup Failed', errorMessage);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 100);
   };
 
   return (

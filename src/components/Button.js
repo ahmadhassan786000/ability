@@ -8,7 +8,9 @@ export default function Button({
   size = 'md', 
   loading = false, 
   disabled = false,
+  dismissKeyboard = false,
   style,
+  textStyle,
   ...props 
 }) {
   const getButtonStyle = () => {
@@ -47,10 +49,55 @@ export default function Button({
     return baseStyle;
   };
 
+  const handlePress = () => {
+    // Dismiss keyboard if requested - try multiple methods
+    if (dismissKeyboard) {
+      // Method 1: Try Keyboard.dismiss()
+      try {
+        if (Keyboard && Keyboard.dismiss) {
+          Keyboard.dismiss();
+        }
+      } catch (error) {
+        console.log('Method 1 failed:', error);
+      }
+      
+      // Method 2: Try to blur any focused input
+      try {
+        const { TextInput } = require('react-native');
+        if (TextInput.State && TextInput.State.currentlyFocusedInput) {
+          const currentInput = TextInput.State.currentlyFocusedInput();
+          if (currentInput && currentInput.blur) {
+            currentInput.blur();
+          }
+        }
+      } catch (error) {
+        console.log('Method 2 failed:', error);
+      }
+      
+      // Method 3: Try using findNodeHandle approach
+      try {
+        const { findNodeHandle, TextInput } = require('react-native');
+        const currentlyFocusedInput = TextInput.State.currentlyFocusedInput();
+        if (currentlyFocusedInput) {
+          currentlyFocusedInput.blur();
+        }
+      } catch (error) {
+        console.log('Method 3 failed:', error);
+      }
+    }
+    
+    // Small delay to ensure keyboard dismissal completes
+    setTimeout(() => {
+      if (onPress) {
+        onPress();
+      }
+    }, 50);
+  };
+
   return (
     <TouchableOpacity
       style={[getButtonStyle(), style]}
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
       activeOpacity={0.8}
       {...props}
@@ -61,7 +108,7 @@ export default function Button({
           color={variant === 'primary' ? Colors.white : Colors.primary} 
         />
       ) : (
-        <Text style={getTextStyle()}>{title}</Text>
+        <Text style={[getTextStyle(), textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );

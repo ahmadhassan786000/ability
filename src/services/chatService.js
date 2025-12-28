@@ -1,15 +1,27 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const CHAT_SESSIONS_KEY = "chat_sessions_";
-const ACTIVE_CHAT_KEY = "active_chat_";
-const MAX_HISTORY_ITEMS = 50;
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    limit,
+    orderBy,
+    query,
+    setDoc,
+    updateDoc,
+    where,
+    writeBatch
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-// ChatGPT-style chat service with session management
+// Firebase Firestore chat service with session management
 export class ChatService {
   constructor() {
     this.listeners = new Map();
     this.currentChatId = null;
     this.currentSpeech = null; // Track current speech instance
+    this.unsubscribers = new Map(); // Track Firestore listeners
   }
 
   // Create new chat session
@@ -27,17 +39,12 @@ export class ChatService {
         isActive: true
       };
 
-      // Save new chat session
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const existingSessions = await AsyncStorage.getItem(sessionsKey);
-      const sessions = existingSessions ? JSON.parse(existingSessions) : [];
-      
-      sessions.unshift(newChat); // Add to beginning
-      await AsyncStorage.setItem(sessionsKey, JSON.stringify(sessions));
+      // Save new chat session to Firestore
+      await setDoc(doc(db, 'chats', chatId), newChat);
       
       // Set as active chat
       this.currentChatId = chatId;
-      await AsyncStorage.setItem(ACTIVE_CHAT_KEY + userId, chatId);
+      await setDoc(doc(db, 'activeChats', userId), { chatId, updatedAt: Date.now() });
       
       // Notify listeners with empty messages for new chat
       this.notifyListeners(userId, []);
@@ -53,17 +60,15 @@ export class ChatService {
   // Get or create active chat
   async getActiveChat(userId) {
     try {
-      const activeChatId = await AsyncStorage.getItem(ACTIVE_CHAT_KEY + userId);
+      const activeChatDoc = await getDoc(doc(db, 'activeChats', userId));
       
-      if (activeChatId) {
-        const sessionsKey = CHAT_SESSIONS_KEY + userId;
-        const sessions = await AsyncStorage.getItem(sessionsKey);
-        const chatSessions = sessions ? JSON.parse(sessions) : [];
+      if (activeChatDoc.exists()) {
+        const { chatId } = activeChatDoc.data();
+        const chatDoc = await getDoc(doc(db, 'chats', chatId));
         
-        const activeChat = chatSessions.find(chat => chat.chatId === activeChatId);
-        if (activeChat) {
-          this.currentChatId = activeChatId;
-          return activeChat;
+        if (chatDoc.exists()) {
+          this.currentChatId = chatId;
+          return chatDoc.data();
         }
       }
       
@@ -79,11 +84,8 @@ export class ChatService {
   // Get specific chat by ID
   async getChatById(userId, chatId) {
     try {
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const sessions = await AsyncStorage.getItem(sessionsKey);
-      const chatSessions = sessions ? JSON.parse(sessions) : [];
-      
-      return chatSessions.find(chat => chat.chatId === chatId) || null;
+      const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      return chatDoc.exists() ? chatDoc.data() : null;
     } catch (error) {
       console.error("Error getting chat by ID:", error);
       return null;
@@ -178,9 +180,13 @@ export class ChatService {
         }
       }
       
-      // Save user message and notify listeners immediately
-      await this.updateChatSession(userId, activeChat);
+      // Show user message immediately in UI (notify listeners first)
       this.notifyListeners(userId, activeChat.messages);
+      
+      // Save user message to database in background (don't await)
+      this.updateChatSession(userId, activeChat).catch(error => {
+        console.error("Error saving user message to database:", error);
+      });
       
       // Add loading message for AI response
       const loadingMessage = {
@@ -194,8 +200,14 @@ export class ChatService {
       };
       
       activeChat.messages.push(loadingMessage);
-      await this.updateChatSession(userId, activeChat);
+      
+      // Show loading message immediately in UI
       this.notifyListeners(userId, activeChat.messages);
+      
+      // Save loading message to database in background
+      this.updateChatSession(userId, activeChat).catch(error => {
+        console.error("Error saving loading message to database:", error);
+      });
       
       // Generate AI response in background
       try {
@@ -288,24 +300,10 @@ export class ChatService {
     }
   }
 
-  // Update chat session in storage
+  // Update chat session in Firestore
   async updateChatSession(userId, updatedChat) {
     try {
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const sessions = await AsyncStorage.getItem(sessionsKey);
-      const chatSessions = sessions ? JSON.parse(sessions) : [];
-      
-      const index = chatSessions.findIndex(chat => chat.chatId === updatedChat.chatId);
-      if (index !== -1) {
-        chatSessions[index] = updatedChat;
-        // Move updated chat to top
-        const [updatedChatSession] = chatSessions.splice(index, 1);
-        chatSessions.unshift(updatedChatSession);
-      } else {
-        chatSessions.unshift(updatedChat);
-      }
-      
-      await AsyncStorage.setItem(sessionsKey, JSON.stringify(chatSessions));
+      await updateDoc(doc(db, 'chats', updatedChat.chatId), updatedChat);
     } catch (error) {
       console.error("Error updating chat session:", error);
     }
@@ -348,18 +346,31 @@ export class ChatService {
   // Get chat history list for UI
   async getChatHistory(userId) {
     try {
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const sessions = await AsyncStorage.getItem(sessionsKey);
-      const chatSessions = sessions ? JSON.parse(sessions) : [];
+      const chatsQuery = query(
+        collection(db, 'chats'),
+        where('userId', '==', userId),
+        orderBy('updatedAt', 'desc'),
+        limit(50)
+      );
       
-      // Return only necessary data for history list
-      return chatSessions.map(chat => ({
-        chatId: chat.chatId,
-        title: chat.title || 'New Chat',
-        summary: chat.summary || 'Start a conversation...',
-        updatedAt: chat.updatedAt,
-        messageCount: chat.messages.length
-      })).sort((a, b) => b.updatedAt - a.updatedAt);
+      const querySnapshot = await getDocs(chatsQuery);
+      const chatHistory = [];
+      
+      querySnapshot.forEach((doc) => {
+        const chat = doc.data();
+        // Only include chats that have messages or a proper title (not "New Chat" with no messages)
+        if (chat.messages && chat.messages.length > 0) {
+          chatHistory.push({
+            chatId: chat.chatId,
+            title: chat.title || 'New Chat',
+            summary: chat.summary || 'Start a conversation...',
+            updatedAt: chat.updatedAt,
+            messageCount: chat.messages.length
+          });
+        }
+      });
+      
+      return chatHistory;
     } catch (error) {
       console.error("Error getting chat history:", error);
       return [];
@@ -372,7 +383,7 @@ export class ChatService {
       const chat = await this.getChatById(userId, chatId);
       if (chat) {
         this.currentChatId = chatId;
-        await AsyncStorage.setItem(ACTIVE_CHAT_KEY + userId, chatId);
+        await setDoc(doc(db, 'activeChats', userId), { chatId, updatedAt: Date.now() });
         
         // Notify listeners with new chat messages
         this.notifyListeners(userId, chat.messages);
@@ -401,11 +412,24 @@ export class ChatService {
   // Clear all chat history
   async clearAllChats(userId) {
     try {
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const activeChatKey = ACTIVE_CHAT_KEY + userId;
+      // Get all user chats
+      const chatsQuery = query(
+        collection(db, 'chats'),
+        where('userId', '==', userId)
+      );
       
-      await AsyncStorage.removeItem(sessionsKey);
-      await AsyncStorage.removeItem(activeChatKey);
+      const querySnapshot = await getDocs(chatsQuery);
+      const batch = writeBatch(db);
+      
+      // Delete all chats
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      
+      // Delete active chat reference
+      batch.delete(doc(db, 'activeChats', userId));
+      
+      await batch.commit();
       
       this.currentChatId = null;
       
@@ -427,15 +451,44 @@ export class ChatService {
     }
   }
 
+  // Clean up empty chats with "New Chat" title
+  async cleanupEmptyNewChats(userId) {
+    try {
+      const chatsQuery = query(
+        collection(db, 'chats'),
+        where('userId', '==', userId)
+      );
+      
+      const querySnapshot = await getDocs(chatsQuery);
+      const batch = writeBatch(db);
+      let deletedCount = 0;
+      
+      querySnapshot.forEach((doc) => {
+        const chat = doc.data();
+        // Delete chats that have "New Chat" title and no messages or only empty messages
+        if ((chat.title === 'New Chat' || chat.title === null || !chat.title) && 
+            (!chat.messages || chat.messages.length === 0)) {
+          batch.delete(doc.ref);
+          deletedCount++;
+        }
+      });
+      
+      if (deletedCount > 0) {
+        await batch.commit();
+        console.log(`Cleaned up ${deletedCount} empty new chats`);
+      }
+      
+      return deletedCount;
+    } catch (error) {
+      console.error("Error cleaning up empty new chats:", error);
+      return 0;
+    }
+  }
+
   // Delete specific chat session
   async deleteChat(userId, chatId) {
     try {
-      const sessionsKey = CHAT_SESSIONS_KEY + userId;
-      const sessions = await AsyncStorage.getItem(sessionsKey);
-      const chatSessions = sessions ? JSON.parse(sessions) : [];
-      
-      const updatedSessions = chatSessions.filter(chat => chat.chatId !== chatId);
-      await AsyncStorage.setItem(sessionsKey, JSON.stringify(updatedSessions));
+      await deleteDoc(doc(db, 'chats', chatId));
       
       // If deleted chat was active, create new one
       if (this.currentChatId === chatId) {
@@ -566,3 +619,4 @@ export const createNewChat = (userId) => chatService.createNewChat(userId);
 export const getChatHistory = (userId) => chatService.getChatHistory(userId);
 export const switchToChat = (userId, chatId) => chatService.switchToChat(userId, chatId);
 export const clearAllChats = (userId) => chatService.clearAllChats(userId);
+export const cleanupEmptyNewChats = (userId) => chatService.cleanupEmptyNewChats(userId);

@@ -1,11 +1,12 @@
 import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
+    ExpoSpeechRecognitionModule,
+    useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { chatService } from '../services/chatService';
 
-export default function VoiceRecorder({ onSend }) {
+export default function VoiceRecorder({ onSend, loading = false }) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [recognizedText, setRecognizedText] = useState("");
@@ -109,6 +110,9 @@ export default function VoiceRecorder({ onSend }) {
     }
 
     try {
+      // Stop any ongoing AI speech when user starts recording
+      chatService.stopSpeech();
+      
       setRecognizedText("");
       setPreviousText(""); // Reset previous text for new recording
 
@@ -137,6 +141,9 @@ export default function VoiceRecorder({ onSend }) {
     }
 
     try {
+      // Stop any ongoing AI speech when user resumes recording
+      chatService.stopSpeech();
+      
       // Store the current recognized text to append to later
       setPreviousText(recognizedText);
 
@@ -168,8 +175,10 @@ export default function VoiceRecorder({ onSend }) {
   };
 
   const sendRecognizedText = async () => {
-    if (!recognizedText.trim()) {
-      Alert.alert("No Speech", "No speech was recognized. Please try again.");
+    if (!recognizedText.trim() || loading) {
+      if (!recognizedText.trim()) {
+        Alert.alert("No Speech", "No speech was recognized. Please try again.");
+      }
       return;
     }
 
@@ -260,9 +269,18 @@ export default function VoiceRecorder({ onSend }) {
             
             <TouchableOpacity
               onPress={sendRecognizedText}
-              style={[styles.actionButton, styles.sendButton]}
+              style={[
+                styles.actionButton, 
+                styles.sendButton,
+                loading && styles.buttonDisabled
+              ]}
+              disabled={loading}
             >
-              <Text style={styles.actionButtonText}>➤</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.actionButtonText}>➤</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -362,6 +380,9 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     backgroundColor: '#25D366', // WhatsApp green
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   actionButtonText: {
     fontSize: 16,

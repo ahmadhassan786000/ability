@@ -1,30 +1,32 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import Button from '../src/components/Button';
 import { ChatBubble } from '../src/components/ChatBubble';
 import { TextInputBox } from '../src/components/TextInputBox';
 import { VoiceRecorder } from '../src/components/VoiceRecorder';
 import { useAuth } from '../src/hooks/useAuth';
 import { chatService } from '../src/services/chatService';
 import {
-  BorderRadius,
-  Colors,
-  Shadows,
-  Spacing,
-  Typography,
+    BorderRadius,
+    Colors,
+    Shadows,
+    Spacing,
+    Typography,
 } from '../src/styles/designSystem';
 
 const { width } = Dimensions.get('window');
@@ -41,6 +43,9 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showEmptyChatMessage, setShowEmptyChatMessage] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
+  const [deletingChats, setDeletingChats] = useState(new Set());
+  const [sendingMessage, setSendingMessage] = useState(false);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -57,56 +62,38 @@ export default function ChatScreen() {
   }, [user?.uid]);
 
   useEffect(() => {
-    // Create new chat when component mounts (when coming from welcome page)
+    // Load existing chat when component mounts
     if (user?.uid && !loading) {
-      handleAutoNewChat();
+      initializeChat();
     }
 
-    // Cleanup function: Remove "New Chat" entries when component unmounts
+    // Cleanup function: Stop speech and cleanup empty chats when leaving the screen
     return () => {
-      if (user?.uid) {
-        handleCleanupNewChats();
-      }
-      
       // Stop any ongoing speech when leaving the screen
       chatService.stopSpeech();
+      
+      // Cleanup empty "New Chat" entries when component unmounts
+      if (user?.uid) {
+        chatService.cleanupEmptyNewChats(user.uid).catch(error => {
+          console.error("Error during cleanup:", error);
+        });
+      }
     };
   }, [user?.uid, loading]);
 
 
-  const handleCleanupNewChats = async () => {
+  const initializeChat = async () => {
     if (user?.uid) {
       try {
-        // Get current chat history
-        const history = await chatService.getChatHistory(user.uid);
-        
-        // Find all chats with title "New Chat"
-        const newChatEntries = history.filter(chat => chat.title === 'New Chat');
-        
-        // Delete each "New Chat" entry
-        for (const chat of newChatEntries) {
-          await chatService.deleteChat(user.uid, chat.chatId);
-          console.log("Removed 'New Chat' from history:", chat.chatId);
+        // Simply get the active chat (this will create one if none exists)
+        // Don't force create a new chat every time
+        const activeChat = await chatService.getActiveChat(user.uid);
+        if (activeChat) {
+          setActiveChatId(activeChat.chatId);
         }
+        loadChatHistory();
       } catch (error) {
-        console.error("Error cleaning up 'New Chat' entries:", error);
-      }
-    }
-  };
-
-  const handleAutoNewChat = async () => {
-    if (user?.uid) {
-      try {
-        // Check if current chat has messages
-        if (messages.length > 0) {
-          // If current chat has messages, create a new empty chat
-          const newChatId = await chatService.createNewChat(user.uid);
-          setActiveChatId(newChatId);
-          loadChatHistory();
-        }
-        // If current chat is already empty, do nothing (keep the empty chat)
-      } catch (error) {
-        console.error("Error creating auto new chat:", error);
+        console.error("Error initializing chat:", error);
       }
     }
   };
@@ -170,11 +157,14 @@ export default function ChatScreen() {
 
   const handleSend = async (text, messageType = 'text') => {
     if (user?.uid && text.trim()) {
+      setSendingMessage(true);
       try {
         await chatService.sendMessage(user.uid, text, messageType);
         loadChatHistory(); // Refresh sidebar history
       } catch (error) {
         console.error("Error sending message:", error);
+      } finally {
+        setSendingMessage(false);
       }
     }
   };
@@ -220,23 +210,36 @@ export default function ChatScreen() {
 
   const handleChatDelete = async (chatId) => {
     if (user?.uid) {
+      // Add chatId to deleting set
+      setDeletingChats(prev => new Set([...prev, chatId]));
+      
       try {
         await chatService.deleteChat(user.uid, chatId);
         loadChatHistory(); // Refresh sidebar history
       } catch (error) {
         console.error('Error deleting chat:', error);
+      } finally {
+        // Remove chatId from deleting set
+        setDeletingChats(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(chatId);
+          return newSet;
+        });
       }
     }
   };
 
   const handleClearHistory = async () => {
     if (user?.uid) {
+      setClearingHistory(true);
       try {
         await chatService.clearAllChats(user.uid);
         setChatHistory([]);
         setSidebarVisible(false);
       } catch (error) {
         console.error('Error clearing chat history:', error);
+      } finally {
+        setClearingHistory(false);
       }
     }
   };
@@ -303,10 +306,18 @@ export default function ChatScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.deleteChatButton}
+          style={[
+            styles.deleteChatButton,
+            deletingChats.has(item.chatId) && styles.deleteChatButtonLoading
+          ]}
           onPress={() => handleChatDelete(item.chatId)}
+          disabled={deletingChats.has(item.chatId)}
         >
-          <Text style={styles.deleteChatText}>×</Text>
+          {deletingChats.has(item.chatId) ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.deleteChatText}>×</Text>
+          )}
         </TouchableOpacity>
       </View>
     );
@@ -404,9 +415,9 @@ export default function ChatScreen() {
         )}
 
         {mode === 'text' ? (
-          <TextInputBox onSend={handleSend} />
+          <TextInputBox onSend={handleSend} loading={sendingMessage} />
         ) : (
-          <VoiceRecorder onSend={(text) => handleSend(text, 'voice')} />
+          <VoiceRecorder onSend={(text) => handleSend(text, 'voice')} loading={sendingMessage} />
         )}
       </KeyboardAvoidingView>
 
@@ -472,12 +483,16 @@ export default function ChatScreen() {
 
               {chatHistory.length > 0 && (
                 <View style={styles.sidebarFooter}>
-                  <TouchableOpacity
-                    style={styles.clearHistoryButton}
+                  <Button
+                    title="Clear All History"
                     onPress={handleClearHistory}
-                  >
-                    <Text style={styles.clearHistoryText}>Clear All History</Text>
-                  </TouchableOpacity>
+                    loading={clearingHistory}
+                    disabled={clearingHistory}
+                    variant="outline"
+                    size="sm"
+                    style={styles.clearHistoryButton}
+                    textStyle={styles.clearHistoryButtonText}
+                  />
                 </View>
               )}
             </TouchableOpacity>
@@ -748,14 +763,10 @@ const styles = StyleSheet.create({
   },
   clearHistoryButton: {
     backgroundColor: 'rgba(239, 68, 68, 0.8)',
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    ...Shadows.sm,
-    borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.4)',
+    borderWidth: 1,
   },
-  clearHistoryText: {
+  clearHistoryButtonText: {
     color: '#FFFFFF',
     fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.semiBold,
@@ -786,6 +797,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.sm,
+  },
+  deleteChatButtonLoading: {
+    opacity: 0.7,
   },
   deleteChatText: {
     color: '#FFFFFF',

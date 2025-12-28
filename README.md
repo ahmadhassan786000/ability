@@ -8,10 +8,25 @@ A modern React Native chatbot application built with Expo, featuring voice recor
 - 🎙️ **Voice Recording**: Voice-to-text functionality with speech recognition
 - 💬 **Real-time Chat**: Instant messaging with typing indicators
 - 📱 **Cross-Platform**: Works on both iOS and Android
-- 🔐 **User Authentication**: Secure login and signup system
-- 💾 **Chat History**: Persistent chat sessions with local storage
+- 🔐 **Firebase Authentication**: Secure user authentication with Firebase Auth
+- � **CloudH Storage**: Chat data stored in Firebase Firestore
+- 💾 **Real-time Sync**: Chat history synced across devices
 - 🎨 **Modern UI**: Clean, responsive design with dark theme
 - 🔍 **Google Search Grounding**: Real-time information beyond AI's knowledge cutoff
+
+## Quick Setup Checklist
+
+Before you start, make sure you complete these steps:
+
+- [ ] Clone the repository
+- [ ] Install dependencies (`npm install`)
+- [ ] Create Firebase project
+- [ ] Enable Email/Password authentication in Firebase
+- [ ] Create Firestore database
+- [ ] Update Firebase config in `src/config/firebase.js`
+- [ ] Set up Firestore security rules
+- [ ] (Optional) Add your own Gemini API key
+- [ ] Start the development server (`npm start`)
 
 ## Prerequisites
 
@@ -42,8 +57,113 @@ npm install
 yarn install
 ```
 
-### 3. API Configuration
-The app uses Google Gemini API keys that are already configured in the code. No additional API setup is required.
+### 3. Firebase Setup (Required)
+
+This app uses Firebase for authentication and data storage. You need to create your own Firebase project and configure it:
+
+#### Step 1: Create Firebase Project
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Click "Create a project" or "Add project"
+3. Enter your project name (e.g., "my-chatbot-app")
+4. Enable Google Analytics (optional)
+5. Click "Create project"
+
+#### Step 2: Enable Authentication
+1. In your Firebase project, go to **Authentication** → **Sign-in method**
+2. Enable **Email/Password** provider
+3. Click "Save"
+
+#### Step 3: Create Firestore Database
+1. Go to **Firestore Database** → **Create database**
+2. Choose **Start in test mode** (for development)
+3. Select your preferred location
+4. Click "Done"
+
+#### Step 4: Get Firebase Configuration
+1. Go to **Project Settings** (gear icon) → **General** tab
+2. Scroll down to "Your apps" section
+3. Click **Web app** icon (`</>`)
+4. Register your app with a name (e.g., "Chatbot Web App")
+5. Copy the `firebaseConfig` object
+
+#### Step 5: Update Firebase Configuration
+1. Open `src/config/firebase.js` in your project
+2. Replace the existing `firebaseConfig` object with your configuration:
+
+```javascript
+const firebaseConfig = {
+  apiKey: "your-api-key-here",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.firebasestorage.app",
+  messagingSenderId: "your-sender-id",
+  appId: "your-app-id",
+  measurementId: "your-measurement-id" // Optional
+};
+```
+
+**Security Note**: For production apps, consider using environment variables to store sensitive configuration. However, for Expo development, the config file approach is standard and secure enough since Firebase client SDKs are designed to be used with public API keys.
+
+#### Step 6: Configure Firestore Security Rules (Important)
+1. Go to **Firestore Database** → **Rules** tab
+2. Replace the default rules with these secure rules:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own data
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Active chats - users can only access their own
+    match /activeChats/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User profiles - users can only access their own
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+3. Click **Publish** to save the rules
+
+#### Step 7: Set Up Gemini AI API (Optional but Recommended)
+The app uses Google's Gemini API for AI responses. To use your own API key:
+
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a new API key
+3. Open `src/services/chatService.js`
+4. Replace the API key in the `API_KEYS` array:
+
+```javascript
+const API_KEYS = [
+  'your-gemini-api-key-here',
+];
+```
+
+**Note**: The current API key in the code is for demonstration purposes and may have usage limits.
+
+#### Firebase Services Used:
+- **Firebase Authentication**: Email/password user authentication
+- **Firebase Firestore**: Real-time chat data storage and synchronization
+- **Security Rules**: Protect user data with proper access controls
+
+#### Testing Your Firebase Setup:
+1. Start the app: `npm start`
+2. Create a new account using the signup screen
+3. Try logging in with your credentials
+4. Send a test message in the chat
+5. Check your Firebase Console:
+   - **Authentication** → **Users** (should show your account)
+   - **Firestore Database** → **Data** (should show chat collections)
+
+If everything works, your Firebase setup is complete! 🎉
 
 ### 4. Start the Development Server
 ```bash
@@ -116,25 +236,29 @@ ability-chatbot/
 - **React Native** - Mobile app framework
 - **Expo** - Development platform and tools
 - **Expo Router** - File-based routing
+- **Firebase Authentication** - User authentication and management
+- **Firebase Firestore** - Real-time cloud database
 - **Google Gemini API** - AI responses with search grounding
 - **Expo Speech Recognition** - Voice-to-text functionality
 - **Expo Speech** - Text-to-speech for voice responses
-- **AsyncStorage** - Local data persistence
 - **Expo Haptics** - Tactile feedback
 
 ## Features Overview
 
 ### Authentication System
-- User registration and login
-- Secure session management
+- Firebase Authentication with email/password
+- Secure user registration and login
+- Real-time authentication state management
 - Password reset functionality
+- User profile management
 
 ### Chat Features
-- Real-time messaging interface
+- Real-time messaging interface with Firestore
 - AI-powered responses using Gemini API
 - Voice recording with speech-to-text
 - Text-to-speech for AI responses
-- Chat history and session management
+- Cloud-based chat history and session management
+- Real-time synchronization across devices
 - Typing indicators and loading states
 
 ### Voice Integration
@@ -178,6 +302,33 @@ ability-chatbot/
    - Make sure Android Studio is installed
    - Start an Android Virtual Device (AVD)
    - Try: `npx expo run:android`
+
+### Firebase Issues
+
+6. **Authentication not working**:
+   - Verify your Firebase config in `src/config/firebase.js`
+   - Check if Email/Password is enabled in Firebase Console
+   - Ensure your app domain is authorized in Firebase Authentication settings
+
+7. **Firestore permission denied**:
+   - Check your Firestore security rules
+   - Make sure users are authenticated before accessing data
+   - Verify the rules match the structure provided in setup
+
+8. **Firebase initialization errors**:
+   - Clear app data/cache on your device
+   - Restart the development server
+   - Check for typos in your Firebase configuration
+
+9. **Chat data not syncing**:
+   - Check your internet connection
+   - Verify Firestore rules allow read/write for authenticated users
+   - Check browser/device console for Firebase errors
+
+10. **Gemini AI not responding**:
+    - Verify your Gemini API key is valid
+    - Check API key usage limits in Google AI Studio
+    - Ensure you have internet connection for API calls
 
 ### Performance Tips
 

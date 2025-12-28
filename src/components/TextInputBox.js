@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
     BorderRadius,
     Shadows,
@@ -7,11 +7,11 @@ import {
     Typography
 } from '../styles/designSystem';
 
-export default function TextInputBox({ onSend }) {
+export default function TextInputBox({ onSend, loading = false }) {
   const [text, setText] = useState('');
 
   const handleSend = () => {
-    if (text.trim()) {
+    if (text.trim() && !loading) {
       onSend(text.trim());
       setText('');
       Keyboard.dismiss(); // Dismiss keyboard after sending message
@@ -26,23 +26,28 @@ export default function TextInputBox({ onSend }) {
           onChangeText={setText} 
           placeholder="Type a message..."
           placeholderTextColor="#94A3B8" // Light gray for dark theme
-          style={styles.textInput}
+          style={[styles.textInput, loading && styles.textInputDisabled]}
           multiline
           maxLength={1000}
           returnKeyType="send"
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
           enablesReturnKeyAutomatically={true}
+          editable={!loading}
         />
         <TouchableOpacity 
           style={[
             styles.sendButton, 
-            { opacity: text.trim() ? 1 : 0.5 }
+            { opacity: (text.trim() && !loading) ? 1 : 0.5 }
           ]} 
           onPress={handleSend}
-          disabled={!text.trim()}
+          disabled={!text.trim() || loading}
         >
-          <Text style={styles.sendButtonText}>Send</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.sendButtonText}>Send</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -78,6 +83,9 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
+  },
+  textInputDisabled: {
+    opacity: 0.6,
   },
   sendButton: {
     backgroundColor: '#6366F1', // Purple primary color
