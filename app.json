@@ -4,33 +4,48 @@
     "slug": "ability-chatbot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ability_logo.jpg",
     "scheme": "abilitychatbot",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "backgroundColor": "#1F2937",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abilityapp.chatbot",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Ability Chatbot to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow Ability Chatbot to access your microphone for speech recognition."
+      }
     },
     "android": {
+      "package": "com.abilityapp.chatbot",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/ability_logo.jpg",
+        "backgroundImage": "./assets/images/ability_logo.jpg",
+        "monochromeImage": "./assets/images/ability_logo.jpg"
       },
+      "permissions": [
+        "RECORD_AUDIO",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/ability_logo.jpg"
     },
     "plugins": [
-      "expo-router",
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/ability_logo.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -38,11 +53,30 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Ability Chatbot to access your microphone for voice recording."
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Ability Chatbot to access your microphone for speech recognition.",
+          "speechRecognitionPermission": "Allow Ability Chatbot to use speech recognition."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f292b3df-99a2-4b96-be9c-11a606771aa3"
+      }
     }
   }
 }
