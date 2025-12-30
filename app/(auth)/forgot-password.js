@@ -6,7 +6,8 @@ import {
     Platform,
     StyleSheet,
     Text,
-    View
+    View,
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
@@ -122,51 +123,117 @@ export default function ForgotPasswordScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.content}>
+              {/* Header */}
+              <View style={styles.header}>
+                <View style={styles.logoContainer}>
+                  <Text style={styles.logo}>🔑</Text>
+                </View>
+                <Text style={styles.title}>Set New Password</Text>
+                <Text style={styles.subtitle}>
+                  Enter your new password
+                </Text>
+              </View>
+
+              {/* Form */}
+              <View style={styles.form}>
+                {errors.general && (
+                  <Text style={styles.errorText}>{errors.general}</Text>
+                )}
+                
+                <Input
+                  label="New Password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  error={errors.newPassword}
+                  leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
+                />
+
+                <Input
+                  label="Confirm Password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  error={errors.confirmPassword}
+                  leftIcon={<Text style={styles.inputIcon}>🔐</Text>}
+                />
+
+                <Button
+                  title="Update Password"
+                  onPress={handleSetNewPassword}
+                  loading={loading}
+                  style={styles.resetButton}
+                />
+              </View>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>
+                  Remember your password?{' '}
+                  <Link href="/(auth)/login">
+                    <Text style={styles.linkText}>Back to Login</Text>
+                  </Link>
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Text style={styles.logo}>🔑</Text>
+                <Text style={styles.logo}>🔐</Text>
               </View>
-              <Text style={styles.title}>Set New Password</Text>
+              <Text style={styles.title}>Forgot Password?</Text>
               <Text style={styles.subtitle}>
-                Enter your new password
+                Enter your email to reset password
               </Text>
             </View>
 
             {/* Form */}
             <View style={styles.form}>
-              {errors.general && (
-                <Text style={styles.errorText}>{errors.general}</Text>
-              )}
-              
               <Input
-                label="New Password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
+                label="Email Address"
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                error={errors.newPassword}
-                leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-              />
-
-              <Input
-                label="Confirm Password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                error={errors.confirmPassword}
-                leftIcon={<Text style={styles.inputIcon}>🔐</Text>}
+                error={errors.email}
+                leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
               />
 
               <Button
-                title="Update Password"
-                onPress={handleSetNewPassword}
+                title="verify"
+                onPress={handleResetPassword}
                 loading={loading}
                 style={styles.resetButton}
               />
@@ -182,61 +249,7 @@ export default function ForgotPasswordScreen() {
               </Text>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logo}>🔐</Text>
-            </View>
-            <Text style={styles.title}>Forgot Password?</Text>
-            <Text style={styles.subtitle}>
-              Enter your email to reset password
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label="Email Address"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.email}
-              leftIcon={<Text style={styles.inputIcon}>✉️</Text>}
-            />
-
-            <Button
-              title="verify"
-              onPress={handleResetPassword}
-              loading={loading}
-              style={styles.resetButton}
-            />
-          </View>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Remember your password?{' '}
-              <Link href="/(auth)/login">
-                <Text style={styles.linkText}>Back to Login</Text>
-              </Link>
-            </Text>
-          </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -252,10 +265,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  content: {
-    flex: 1,
-    paddingHorizontal: Spacing.md,
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
+    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+  },
+  
+  content: {
+    paddingHorizontal: Spacing.md,
+    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    alignSelf: 'center',
+    width: '100%',
   },
   
   header: {

@@ -1,17 +1,17 @@
 
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    limit,
-    orderBy,
-    query,
-    setDoc,
-    updateDoc,
-    where,
-    writeBatch
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -191,7 +191,7 @@ export class ChatService {
       // Add loading message for AI response
       const loadingMessage = {
         id: `ai_loading_${timestamp}`,
-        text: "typing...",
+        text: "",
         userId: 'ai',
         timestamp: timestamp + 100,
         role: 'assistant',
@@ -502,105 +502,343 @@ export class ChatService {
     }
   }
 
-  // Enhanced AI response generation using multiple Gemini models with fallback
+  // Enhanced AI response generation using Google Gemini REST API with real-time data and semantic analysis
   async generateResponse(text) {
-    const API_KEYS = [
-      'AIzaSyBjkEJDmM_08gpalLDtFRvF1QrvKV5Spco',
-    ];
-    
-    // Multiple models with fallback priority
-    const MODELS = [
-      'gemini-2.5-pro',           // Primary model
-      'gemini-2.5-flash',           // Primary model
-      'gemini-2.5-flash-lite',      // Fallback 1 (current)
-      'gemini-3-flash-preview'      // Fallback 2 (experimental)
-    ];
-    
-    const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-    
-    // Try each model with each API key
-    for (let modelIndex = 0; modelIndex < MODELS.length; modelIndex++) {
-      const model = MODELS[modelIndex];
-      console.log(`Trying model: ${model}`);
+    try {
+      const API_KEY = 'AIzaSyCYg78-drj5-zsraNZZ-Y3HvUcaBzQ06a8';
+      const MODEL = 'gemini-2.5-flash';
       
-      for (let keyIndex = 0; keyIndex < API_KEYS.length; keyIndex++) {
-        try {
-          const API_URL = `${BASE_URL}/${model}:generateContent`;
-          
-          const response = await fetch(`${API_URL}?key=${API_KEYS[keyIndex]}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              system_instruction: {
-                parts: [{
-                  text: "You are a friendly, casual AI assistant. Respond naturally like you're having a normal conversation with a friend. Don't use any markdown formatting, headings, bullet points, or asterisks. Don't structure your responses with sections or categories. Just answer directly and naturally in plain text. Keep it simple, conversational, and helpful without being overly formal or professional. When you have access to real-time information through search, use it to provide current and accurate answers."
-                }]
-              },
-              contents: [{
-                parts: [{
-                  text: text
-                }]
-              }],
-              tools: [{
-                googleSearchRetrieval: {
-                  dynamicRetrievalConfig: {
-                    mode: "MODE_DYNAMIC",
-                    dynamicThreshold: 0.7
-                  }
-                }
-              }],
-              generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 1024,
-              }
-            })
-          });
-
-          // Check if response is successful
-          if (response.status === 200) {
-            const data = await response.json();
-            
-            // Extract the text from the complex JSON structure
-            if (data.candidates && 
-                data.candidates[0] && 
-                data.candidates[0].content && 
-                data.candidates[0].content.parts && 
-                data.candidates[0].content.parts[0] && 
-                data.candidates[0].content.parts[0].text) {
-              
-              console.log(`✅ Success with model: ${model}, API key: ${keyIndex + 1}`);
-              return data.candidates[0].content.parts[0].text.trim();
-            } else {
-              throw new Error('Invalid response structure from API');
-            }
-          } else if (response.status === 429) {
-            // Rate limit hit, try next key with same model
-            console.log(`⚠️ Model ${model} - API key ${keyIndex + 1} rate limited, trying next key...`);
-            continue;
-          } else if (response.status === 404) {
-            // Model not found, try next model
-            console.log(`❌ Model ${model} not available, trying next model...`);
-            break; // Break inner loop to try next model
-          } else {
-            // Other error, try next key with same model
-            console.log(`❌ Model ${model} - API key ${keyIndex + 1} failed with status ${response.status}, trying next key...`);
-            continue;
-          }
-        } catch (error) {
-          console.error(`❌ Error with model ${model}, API key ${keyIndex + 1}:`, error.message);
-          // Try next key with same model
-          continue;
+      // Perform semantic analysis on the input
+      const semanticContext = this.performSemanticAnalysis(text);
+      
+      // Fetch real-time data if needed
+      const realTimeData = await this.fetchRealTimeData(text);
+      
+      // Construct enhanced prompt with semantic analysis and real-time data
+      let enhancedPrompt = text;
+      
+      if (semanticContext.intent || semanticContext.emotion !== 'neutral') {
+        let contextInfo = '\n\nSemantic Context:';
+        
+        if (semanticContext.intent) {
+          contextInfo += `\n- User Intent: ${semanticContext.intent}`;
         }
+        
+        if (semanticContext.emotion !== 'neutral') {
+          contextInfo += `\n- User Emotion: ${semanticContext.emotion}`;
+        }
+        
+        if (semanticContext.sentiment !== 'neutral') {
+          contextInfo += `\n- Sentiment: ${semanticContext.sentiment}`;
+        }
+        
+        if (semanticContext.topics.length > 0) {
+          contextInfo += `\n- Topics: ${semanticContext.topics.join(', ')}`;
+        }
+        
+        if (semanticContext.responseStyle !== 'casual') {
+          contextInfo += `\n- Suggested Response Style: ${semanticContext.responseStyle}`;
+        }
+        
+        if (semanticContext.suggestedEmojis.length > 0) {
+          contextInfo += `\n- Relevant Emojis: ${semanticContext.suggestedEmojis.slice(0, 5).join(' ')}`;
+        }
+        
+        enhancedPrompt += contextInfo;
+      }
+      
+      if (realTimeData) {
+        enhancedPrompt += `\n\nReal-time context: ${realTimeData}`;
+      }
+
+      enhancedPrompt += '\n\nPlease respond as a friendly AI chatbot using plain text only (no markdown formatting like **bold** or *italic*), with appropriate emojis and matching the user\'s emotional context.';
+
+      // Make direct REST API call to Google Gemini
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{
+              text: `You are a friendly, intelligent AI chatbot assistant. Your behavior guidelines:
+
+PERSONALITY & TONE:
+- Be conversational, warm, and approachable like talking to a helpful friend
+- Show enthusiasm and genuine interest in helping users
+- Use a casual, natural speaking style without being overly formal
+- Be empathetic and understanding of user needs and emotions
+
+COMMUNICATION STYLE:
+- Use emojis appropriately to enhance communication and show emotion 😊
+- Add relevant emojis to make responses more engaging and expressive
+- Use emojis that match the context: 🤔 for thinking, 💡 for ideas, 🎉 for celebrations, ❤️ for appreciation, etc.
+- Keep responses conversational and easy to understand
+- Avoid overly technical jargon unless specifically requested
+
+FORMATTING RULES - VERY IMPORTANT:
+- NEVER use markdown formatting like **bold**, *italic*, or ***bold italic***
+- NEVER use asterisks (*) around text for emphasis
+- NEVER use underscores (_) for formatting
+- NEVER use hashtags (#) for headings
+- NEVER use backticks (\`) for code formatting
+- Write everything in plain text only
+- Use CAPITAL LETTERS sparingly for emphasis if needed
+- Use emojis and natural language for emphasis instead of formatting symbols
+
+SEMANTIC ANALYSIS & RESPONSES:
+- Analyze the user's intent, emotion, and context before responding
+- Adapt your response style based on the user's mood and needs
+- If user seems frustrated, be more supportive and patient
+- If user is excited, match their energy with enthusiasm
+- For questions, provide clear and helpful answers
+- For problems, offer practical solutions and alternatives
+
+RESPONSE STRUCTURE:
+- Start with an appropriate greeting or acknowledgment
+- Address the user's specific question or concern
+- Provide helpful, accurate information in plain text
+- End with encouragement or offer further assistance when appropriate
+- Use emojis naturally throughout the response, not just at the end
+
+EXAMPLES OF GOOD RESPONSES:
+- "Hey there! 😊 I'd be happy to help you with that..."
+- "That's a great question! 🤔 Let me break this down for you..."
+- "I understand that can be frustrating 😔 Here's what I suggest..."
+- "Awesome! 🎉 You're on the right track. Here's how to..."
+
+WHAT NOT TO DO:
+- Don't write: "**Important:** This is bold text"
+- Don't write: "*Here's* some italic text"
+- Don't write: "# This is a heading"
+- Don't write: "\`code example\`"
+
+WHAT TO DO INSTEAD:
+- Write: "Important: This is emphasized text"
+- Write: "Here's some important information"
+- Write: "Main Topic: Your heading here"
+- Write: "Here's the code: your code here"
+
+Remember: Be helpful, friendly, use emojis, and write in plain text without any markdown formatting symbols! 🌟`
+            }]
+          },
+          contents: [{
+            parts: [{
+              text: enhancedPrompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.9,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract the text from the response
+        if (data.candidates && 
+            data.candidates[0] && 
+            data.candidates[0].content && 
+            data.candidates[0].content.parts && 
+            data.candidates[0].content.parts[0] && 
+            data.candidates[0].content.parts[0].text) {
+          
+          console.log(`✅ Success with Google Gemini REST API model: ${MODEL}`);
+          return data.candidates[0].content.parts[0].text.trim();
+        } else {
+          throw new Error('Invalid response structure from API');
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(`API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error with Google Gemini API:`, error.message);
+      return "I'm sorry, I'm having trouble connecting to my AI service right now. Please try again in a moment. In the meantime, I'm here to help with any questions you might have!";
+    }
+  }
+
+  // Perform semantic analysis on user input
+  performSemanticAnalysis(text) {
+    const analysis = {
+      intent: null,
+      topics: [],
+      sentiment: 'neutral',
+      emotion: 'neutral',
+      entities: [],
+      keywords: [],
+      suggestedEmojis: [],
+      responseStyle: 'casual'
+    };
+
+    const lowerText = text.toLowerCase();
+    
+    // Intent detection
+    const intentPatterns = {
+      question: ['what', 'how', 'why', 'when', 'where', 'who', '?', 'explain', 'tell me'],
+      request: ['please', 'can you', 'could you', 'help me', 'i need', 'show me'],
+      information: ['tell me', 'explain', 'describe', 'define', 'what is'],
+      problem: ['error', 'issue', 'problem', 'bug', 'not working', 'broken', 'fix'],
+      greeting: ['hello', 'hi', 'hey', 'good morning', 'good evening', 'greetings'],
+      gratitude: ['thank', 'thanks', 'appreciate', 'grateful'],
+      complaint: ['hate', 'terrible', 'awful', 'worst', 'annoying', 'frustrated'],
+      excitement: ['awesome', 'amazing', 'great', 'fantastic', 'love', 'excited']
+    };
+
+    for (const [intent, patterns] of Object.entries(intentPatterns)) {
+      if (patterns.some(pattern => lowerText.includes(pattern))) {
+        analysis.intent = intent;
+        break;
       }
     }
+
+    // Enhanced topic extraction
+    const topicPatterns = {
+      technology: ['code', 'programming', 'software', 'app', 'website', 'api', 'database', 'react', 'javascript'],
+      health: ['health', 'medical', 'doctor', 'medicine', 'symptoms', 'treatment', 'fitness'],
+      education: ['learn', 'study', 'school', 'university', 'course', 'tutorial', 'teach'],
+      business: ['business', 'company', 'market', 'finance', 'money', 'investment', 'work'],
+      science: ['science', 'research', 'experiment', 'theory', 'physics', 'chemistry', 'biology'],
+      travel: ['travel', 'trip', 'vacation', 'hotel', 'flight', 'destination', 'visit'],
+      food: ['food', 'recipe', 'cooking', 'restaurant', 'eat', 'meal', 'dinner'],
+      entertainment: ['movie', 'music', 'game', 'book', 'show', 'fun', 'entertainment']
+    };
+
+    for (const [topic, keywords] of Object.entries(topicPatterns)) {
+      if (keywords.some(keyword => lowerText.includes(keyword))) {
+        analysis.topics.push(topic);
+      }
+    }
+
+    // Enhanced sentiment and emotion analysis
+    const emotionPatterns = {
+      happy: ['happy', 'joy', 'excited', 'great', 'awesome', 'amazing', 'love', 'wonderful'],
+      sad: ['sad', 'depressed', 'down', 'upset', 'disappointed', 'hurt'],
+      angry: ['angry', 'mad', 'furious', 'annoyed', 'frustrated', 'hate'],
+      worried: ['worried', 'anxious', 'concerned', 'nervous', 'scared', 'afraid'],
+      confused: ['confused', 'lost', 'unclear', 'dont understand', "don't get"],
+      surprised: ['surprised', 'shocked', 'wow', 'unbelievable', 'incredible']
+    };
+
+    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'like', 'happy', 'awesome', 'fantastic'];
+    const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'dislike', 'sad', 'angry', 'frustrated', 'annoying'];
     
-    // If all models and keys failed, return friendly fallback message
-    console.log("❌ All models and API keys failed");
-    return "I'm sorry, I'm having trouble connecting to my AI service right now. Please try again in a moment. In the meantime, I'm here to help with any questions you might have!";
+    const positiveCount = positiveWords.filter(word => lowerText.includes(word)).length;
+    const negativeCount = negativeWords.filter(word => lowerText.includes(word)).length;
+    
+    if (positiveCount > negativeCount) {
+      analysis.sentiment = 'positive';
+    } else if (negativeCount > positiveCount) {
+      analysis.sentiment = 'negative';
+    }
+
+    // Detect specific emotions
+    for (const [emotion, patterns] of Object.entries(emotionPatterns)) {
+      if (patterns.some(pattern => lowerText.includes(pattern))) {
+        analysis.emotion = emotion;
+        break;
+      }
+    }
+
+    // Suggest appropriate emojis based on intent and emotion
+    const emojiSuggestions = {
+      question: ['🤔', '❓', '💭'],
+      greeting: ['👋', '😊', '🙂'],
+      gratitude: ['🙏', '😊', '❤️'],
+      problem: ['😔', '🔧', '💡'],
+      excitement: ['🎉', '😄', '🌟'],
+      happy: ['😊', '😄', '🎉', '❤️'],
+      sad: ['😔', '💙', '🤗'],
+      angry: ['😤', '🤯', '😠'],
+      worried: ['😰', '🤗', '💙'],
+      confused: ['🤔', '😕', '❓'],
+      surprised: ['😲', '🤯', '😮'],
+      technology: ['💻', '⚡', '🚀'],
+      health: ['🏥', '💊', '🩺'],
+      food: ['🍽️', '🍕', '🥗'],
+      travel: ['✈️', '🌍', '🗺️']
+    };
+
+    // Add suggested emojis
+    if (analysis.intent && emojiSuggestions[analysis.intent]) {
+      analysis.suggestedEmojis.push(...emojiSuggestions[analysis.intent]);
+    }
+    if (analysis.emotion && emojiSuggestions[analysis.emotion]) {
+      analysis.suggestedEmojis.push(...emojiSuggestions[analysis.emotion]);
+    }
+    analysis.topics.forEach(topic => {
+      if (emojiSuggestions[topic]) {
+        analysis.suggestedEmojis.push(...emojiSuggestions[topic]);
+      }
+    });
+
+    // Remove duplicates
+    analysis.suggestedEmojis = [...new Set(analysis.suggestedEmojis)];
+
+    // Determine response style
+    if (analysis.emotion === 'sad' || analysis.emotion === 'worried') {
+      analysis.responseStyle = 'supportive';
+    } else if (analysis.emotion === 'happy' || analysis.emotion === 'excited') {
+      analysis.responseStyle = 'enthusiastic';
+    } else if (analysis.intent === 'problem') {
+      analysis.responseStyle = 'helpful';
+    } else if (analysis.intent === 'question') {
+      analysis.responseStyle = 'informative';
+    }
+
+    // Extract keywords (simple approach)
+    const words = text.split(/\s+/).filter(word => word.length > 3);
+    analysis.keywords = words.slice(0, 5); // Top 5 keywords
+
+    return analysis;
+  }
+
+  // Fetch real-time data based on user query
+  async fetchRealTimeData(text) {
+    try {
+      const lowerText = text.toLowerCase();
+      
+      // Check if query needs real-time data
+      const realTimeIndicators = [
+        'current', 'latest', 'now', 'today', 'recent', 'update', 
+        'news', 'weather', 'price', 'stock', 'time', 'date'
+      ];
+      
+      const needsRealTime = realTimeIndicators.some(indicator => 
+        lowerText.includes(indicator)
+      );
+      
+      if (!needsRealTime) {
+        return null;
+      }
+
+      // Get current date and time
+      const now = new Date();
+      const currentDateTime = now.toLocaleString();
+      
+      let realTimeInfo = `Current date and time: ${currentDateTime}`;
+      
+      // Add specific real-time context based on query type
+      if (lowerText.includes('weather')) {
+        realTimeInfo += '. Note: For accurate weather information, please specify your location.';
+      } else if (lowerText.includes('news')) {
+        realTimeInfo += '. Note: I can provide general information, but for latest news, please check current news sources.';
+      } else if (lowerText.includes('price') || lowerText.includes('stock')) {
+        realTimeInfo += '. Note: For current market prices, please check financial websites or apps.';
+      }
+      
+      return realTimeInfo;
+      
+    } catch (error) {
+      console.error('Error fetching real-time data:', error);
+      return null;
+    }
   }
 }
 

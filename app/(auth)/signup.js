@@ -8,7 +8,8 @@ import {
     Platform,
     StyleSheet,
     Text,
-    View
+    View,
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
@@ -123,78 +124,83 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../assets/images/ability_logo.jpg')} 
-                style={styles.logoImage}
-                resizeMode="contain"
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={require('../../assets/images/ability_logo.jpg')} 
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>
+                Join us today
+              </Text>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              <Input
+                label="Username"
+                placeholder="username"
+                value={formData.username}
+                onChangeText={(value) => updateFormData('username', value)}
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.username}
+                leftIcon={<Ionicons name="person" size={20} color="#3B82F6" />}
+              />
+
+              <Input
+                label="Email Address"
+                placeholder="email"
+                value={formData.email}
+                onChangeText={(value) => updateFormData('email', value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.email}
+                leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
+              />
+
+              <Input
+                label="Password"
+                placeholder="password"
+                value={formData.password}
+                onChangeText={(value) => updateFormData('password', value)}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.password}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+              />
+
+              <Input
+                label="Confirm Password"
+                placeholder="password"
+                value={formData.confirmPassword}
+                onChangeText={(value) => updateFormData('confirmPassword', value)}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.confirmPassword}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+              />
+
+              <Button
+                title="Create Account"
+                onPress={handleSignup}
+                loading={loading}
+                style={styles.signupButton}
               />
             </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join us today
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label="Username"
-              placeholder="username"
-              value={formData.username}
-              onChangeText={(value) => updateFormData('username', value)}
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.username}
-              leftIcon={<Ionicons name="person" size={20} color="#3B82F6" />}
-            />
-
-            <Input
-              label="Email Address"
-              placeholder="email"
-              value={formData.email}
-              onChangeText={(value) => updateFormData('email', value)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.email}
-              leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
-            />
-
-            <Input
-              label="Password"
-              placeholder="password"
-              value={formData.password}
-              onChangeText={(value) => updateFormData('password', value)}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.password}
-              leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
-            />
-
-            <Input
-              label="Confirm Password"
-              placeholder="password"
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateFormData('confirmPassword', value)}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.confirmPassword}
-              leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
-            />
-
-            <Button
-              title="Create Account"
-              onPress={handleSignup}
-              loading={loading}
-              style={styles.signupButton}
-            />
-          </View>
 
             {/* Footer */}
             <View style={styles.footer}>
@@ -206,6 +212,7 @@ export default function SignupScreen() {
               </Text>
             </View>
           </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -221,10 +228,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  content: {
-    flex: 1,
-    paddingHorizontal: Spacing.md,
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
+    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+  },
+  
+  content: {
+    paddingHorizontal: Spacing.md,
+    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    alignSelf: 'center',
+    width: '100%',
   },
   
   header: {

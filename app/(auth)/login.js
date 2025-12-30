@@ -8,7 +8,8 @@ import {
     Platform,
     StyleSheet,
     Text,
-    View
+    View,
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
@@ -88,77 +89,83 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Image 
-                source={require('../../assets/images/ability_logo.jpg')} 
-                style={styles.logoImage}
-                resizeMode="contain"
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <Image 
+                  source={require('../../assets/images/ability_logo.jpg')} 
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>
+                Sign in to continue with Ability AI
+              </Text>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              <Input
+                label="Email Address"
+                placeholder="email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                error={errors.email}
+                leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
               />
+
+              <Input
+                label="Password"
+                placeholder="password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                error={errors.password}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+              />
+
+              <Button
+                title="Sign In"
+                onPress={handleLogin}
+                loading={loading}
+                dismissKeyboard={true}
+                style={styles.loginButton}
+              />
+
+              {/* Forgot Password Link */}
+              <View style={styles.forgotPasswordContainer}>
+                <Link href="/(auth)/forgot-password">
+                  <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+                </Link>
+              </View>
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue with Ability AI
-            </Text>
-          </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label="Email Address"
-              placeholder="email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="next"
-              error={errors.email}
-              leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
-            />
-
-            <Input
-              label="Password"
-              placeholder="password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-              error={errors.password}
-              leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
-            />
-
-            <Button
-              title="Sign In"
-              onPress={handleLogin}
-              loading={loading}
-              dismissKeyboard={true}
-              style={styles.loginButton}
-            />
-
-            {/* Forgot Password Link */}
-            <View style={styles.forgotPasswordContainer}>
-              <Link href="/(auth)/forgot-password">
-                <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
-              </Link>
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                Don't have an account?{' '}
+                <Link href="/(auth)/signup">
+                  <Text style={styles.linkText}>Sign Up</Text>
+                </Link>
+              </Text>
             </View>
           </View>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Don't have an account?{' '}
-              <Link href="/(auth)/signup">
-                <Text style={styles.linkText}>Sign Up</Text>
-              </Link>
-            </Text>
-          </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -174,10 +181,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  content: {
-    flex: 1,
-    paddingHorizontal: Spacing.md,
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
+    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+  },
+  
+  content: {
+    paddingHorizontal: Spacing.md,
+    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    alignSelf: 'center',
+    width: '100%',
   },
   
   header: {

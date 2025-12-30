@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       ];
       
       await AsyncStorage.multiRemove(keysToRemove);
-      console.log("Cleared old local storage data");
+      // console.log("Cleared old local storage data");
     } catch (error) {
       console.log("No old data to clear or error clearing:", error);
     }

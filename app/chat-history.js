@@ -89,17 +89,31 @@ export default function ChatHistoryScreen() {
     );
   };
 
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const formatDate = (timestamp) => {
+  if (!timestamp) return '';
 
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays - 1} days ago`;
-    return date.toLocaleDateString();
-  };
+  const chatDate = new Date(timestamp);
+  const now = new Date();
+
+  // Convert BOTH to local date string (PKT safe)
+  const chatDay = chatDate.toLocaleDateString('en-CA');
+  const today = now.toLocaleDateString('en-CA');
+
+  // Yesterday calculation
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const yesterdayDay = yesterday.toLocaleDateString('en-CA');
+
+  if (chatDay === today) return 'Today';
+  if (chatDay === yesterdayDay) return 'Yesterday';
+
+  return chatDate.toLocaleDateString('en-PK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 
   const renderChatItem = ({ item }) => (
     <TouchableOpacity
