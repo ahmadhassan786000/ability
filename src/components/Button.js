@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { BorderRadius, Colors, Shadows, Typography } from '../styles/designSystem';
 
 export default function Button({ 
@@ -50,39 +50,27 @@ export default function Button({
   };
 
   const handlePress = () => {
-    // Dismiss keyboard if requested - try multiple methods
+    // Dismiss keyboard if requested
     if (dismissKeyboard) {
-      // Method 1: Try Keyboard.dismiss()
       try {
+        // Method 1: Try Keyboard.dismiss() (works on native)
         if (Keyboard && Keyboard.dismiss) {
           Keyboard.dismiss();
         }
       } catch (error) {
-        console.log('Method 1 failed:', error);
+        console.log('Keyboard dismiss failed on native:', error);
       }
       
-      // Method 2: Try to blur any focused input
+      // Method 2: For web, try to blur active element
       try {
-        const { TextInput } = require('react-native');
-        if (TextInput.State && TextInput.State.currentlyFocusedInput) {
-          const currentInput = TextInput.State.currentlyFocusedInput();
-          if (currentInput && currentInput.blur) {
-            currentInput.blur();
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.blur) {
+            activeElement.blur();
           }
         }
       } catch (error) {
-        console.log('Method 2 failed:', error);
-      }
-      
-      // Method 3: Try using findNodeHandle approach
-      try {
-        const { findNodeHandle, TextInput } = require('react-native');
-        const currentlyFocusedInput = TextInput.State.currentlyFocusedInput();
-        if (currentlyFocusedInput) {
-          currentlyFocusedInput.blur();
-        }
-      } catch (error) {
-        console.log('Method 3 failed:', error);
+        console.log('Keyboard dismiss failed on web:', error);
       }
     }
     

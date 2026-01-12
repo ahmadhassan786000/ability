@@ -1,53 +1,42 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
-    ScrollView
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
 import Input from '../../src/components/Input';
 import { useAuth } from '../../src/hooks/useAuth';
-import { updatePassword } from '../../src/services/authService';
 import { BorderRadius, Shadows, Spacing, Typography } from '../../src/styles/designSystem';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [errors, setErrors] = useState({});
+  const [emailSent, setEmailSent] = useState(false);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const validatePasswordForm = () => {
-    const newErrors = {};
-    
-    if (!newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (newPassword.length < 6) {
-      newErrors.newPassword = 'Password must be at least 6 characters';
+  const safeAlert = (title, message, buttons = []) => {
+    if (Platform.OS === 'web') {
+      alert(`${title}\n\n${message}`);
+      if (buttons.length > 0 && buttons[0].onPress) {
+        buttons[0].onPress();
+      }
+    } else {
+      Alert.alert(title, message, buttons);
     }
-    
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleResetPassword = async () => {
@@ -65,131 +54,72 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     
-    // Small delay to help with keyboard dismissal
-    setTimeout(async () => {
-      try {
-        await resetPassword(email.trim());
-        // If email is correct, go directly to password reset screen
-        setShowPasswordReset(true);
-      } catch (err) {
-        setErrors({ email: err.message || 'Failed to verify email. Please try again.' });
-      } finally {
-        setLoading(false);
-      }
-    }, 100);
+    try {
+      console.log('Attempting to send reset email to:', email.trim());
+      const result = await resetPassword(email.trim());
+      console.log('Reset password result:', result);
+      
+      setEmailSent(true);
+      
+      safeAlert(
+        'Password Reset Email Sent!',
+        `We've sent password reset instructions to ${email.trim()}.\n\n⚠️ IMPORTANT: Check your SPAM/JUNK folder if you don't see the email in your inbox within 2-3 minutes.\n\nThe email will come from: noreply@ability-59841.firebaseapp.com`,
+        [{
+          text: 'Back to Login',
+          onPress: () => {
+            router.push({
+              pathname: '/(auth)/login',
+              params: { email: email.trim() }
+            });
+          }
+        }]
+      );
+    } catch (err) {
+      console.error('Reset password error:', err);
+      setErrors({ email: err.message || 'Failed to send reset email. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSetNewPassword = async () => {
-    if (!validatePasswordForm()) return;
-
-    setLoading(true);
-    
-    // Small delay to help with keyboard dismissal
-    setTimeout(async () => {
-      try {
-        // Update password in auth service
-        await updatePassword(email.trim(), newPassword);
-        
-        Alert.alert(
-          'Password Updated Successfully! 🎉',
-          'Your password has been changed. You can now sign in with your new password.',
-          [{
-            text: 'Continue to Login',
-            onPress: () => {
-              router.push({
-                pathname: '/(auth)/login',
-                params: { email: email.trim() }
-              });
-            }
-          }]
-        );
-      } catch (err) {
-        setErrors({ general: err.message || 'Failed to update password. Please try again.' });
-      } finally {
-        setLoading(false);
-      }
-    }, 100);
-  };
-
-  const handleBackToLogin = () => {
-    router.back();
-  };
-
-  // Show password reset form after email verification
-  if (showPasswordReset) {
+  // Show success screen if email was sent
+  if (emailSent) {
     return (
       <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.content}>
-              {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.logoContainer}>
-                  <Text style={styles.logo}>🔑</Text>
-                </View>
-                <Text style={styles.title}>Set New Password</Text>
-                <Text style={styles.subtitle}>
-                  Enter your new password
-                </Text>
-              </View>
-
-              {/* Form */}
-              <View style={styles.form}>
-                {errors.general && (
-                  <Text style={styles.errorText}>{errors.general}</Text>
-                )}
-                
-                <Input
-                  label="New Password"
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  error={errors.newPassword}
-                  leftIcon={<Text style={styles.inputIcon}>🔒</Text>}
-                />
-
-                <Input
-                  label="Confirm Password"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  error={errors.confirmPassword}
-                  leftIcon={<Text style={styles.inputIcon}>🔐</Text>}
-                />
-
-                <Button
-                  title="Update Password"
-                  onPress={handleSetNewPassword}
-                  loading={loading}
-                  style={styles.resetButton}
-                />
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  Remember your password?{' '}
-                  <Link href="/(auth)/login">
-                    <Text style={styles.linkText}>Back to Login</Text>
-                  </Link>
-                </Text>
-              </View>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logo}>📧</Text>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We've sent password reset instructions to {email}
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            <Text style={styles.instructionText}>
+              Please check your spam folder at email and click the reset link to set a new password. The link will expire in 1 hour.
+              {'\n\n'}
+              ⚠️ If you don't see the email in your inbox, please check your SPAM/JUNK folder. The email comes from: noreply@ability-59841.firebaseapp.com
+            </Text>
+            
+            <Button
+              title="Back to Login"
+              onPress={() => router.push('/(auth)/login')}
+              style={styles.resetButton}
+            />
+            
+            <Button
+              title="Resend Email"
+              onPress={() => {
+                setEmailSent(false);
+                handleResetPassword();
+              }}
+              style={[styles.resetButton, styles.secondaryButton]}
+            />
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -213,7 +143,7 @@ export default function ForgotPasswordScreen() {
               </View>
               <Text style={styles.title}>Forgot Password?</Text>
               <Text style={styles.subtitle}>
-                Enter your email to reset password
+                Enter your email to receive a password reset link
               </Text>
             </View>
 
@@ -232,7 +162,7 @@ export default function ForgotPasswordScreen() {
               />
 
               <Button
-                title="verify"
+                title="Send Reset Email"
                 onPress={handleResetPassword}
                 loading={loading}
                 style={styles.resetButton}
@@ -341,6 +271,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   
+  secondaryButton: {
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  
   footer: {
     alignItems: 'center',
     paddingVertical: Spacing.lg,
@@ -368,6 +304,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.sm,
   },
   
   errorText: {

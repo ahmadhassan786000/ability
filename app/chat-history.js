@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
     FlatList,
     StyleSheet,
     Text,
@@ -66,7 +65,7 @@ export default function ChatHistoryScreen() {
   };
 
   const handleClearHistory = () => {
-    Alert.alert(
+    safeAlert(
       'Clear Chat History',
       'Are you sure you want to delete all chat history? This action cannot be undone.',
       [

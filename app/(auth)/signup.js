@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
-    ScrollView
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
@@ -81,7 +81,7 @@ export default function SignupScreen() {
         await signup(formData.username.trim(), formData.email.trim(), formData.password);
         Alert.alert(
           'Account Created Successfully!', 
-          // `Welcome ${formData.username}! Your account has been created. You can now sign in with your credentials.`,
+          `Welcome ${formData.username}! Your account has been created. You can now sign in with your credentials.`,
           [{ 
             text: 'Continue to Login', 
             onPress: () => {

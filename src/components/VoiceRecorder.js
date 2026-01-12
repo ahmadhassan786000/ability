@@ -3,7 +3,7 @@ import {
     useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { chatService } from '../services/chatService';
 
 export default function VoiceRecorder({ onSend, loading = false }) {
@@ -52,17 +52,16 @@ export default function VoiceRecorder({ onSend, loading = false }) {
     } else if (event.error === "network") {
       // Network error - show user-friendly message
       console.log("Network error during speech recognition");
-      Alert.alert(
+      safeAlert(
         "Connection Issue", 
-        "Unable to connect to speech recognition service. Please check your internet connection and try again.",
-        [{ text: "OK", style: "default" }]
+        "Unable to connect to speech recognition service. Please check your internet connection and try again."
       );
       setIsRecording(false);
       setRecognizedText("");
     } else {
       // Show alert and log error for other genuine issues
       console.error("Speech recognition error:", event.error, event.message);
-      Alert.alert("Error", `Speech recognition failed: ${event.message || event.error}`);
+      safeAlert("Error", `Speech recognition failed: ${event.message || event.error}`);
       setIsRecording(false);
     }
   });
@@ -92,7 +91,7 @@ export default function VoiceRecorder({ onSend, loading = false }) {
       setHasPermission(result.granted);
       
       if (!result.granted) {
-        Alert.alert(
+        safeAlert(
           'Permission Required', 
           'Microphone permission is required for voice recording'
         );
@@ -129,7 +128,7 @@ export default function VoiceRecorder({ onSend, loading = false }) {
 
     } catch (error) {
       console.error("Failed to start speech recognition:", error);
-      Alert.alert("Error", "Failed to start voice recording");
+      safeAlert("Error", "Failed to start voice recording");
       setIsRecording(false);
     }
   };
@@ -160,7 +159,7 @@ export default function VoiceRecorder({ onSend, loading = false }) {
       
     } catch (error) {
       console.error("Failed to resume speech recognition:", error);
-      Alert.alert("Error", "Failed to resume voice recording");
+      safeAlert("Error", "Failed to resume voice recording");
       setIsRecording(false);
     }
   };
@@ -177,7 +176,7 @@ export default function VoiceRecorder({ onSend, loading = false }) {
   const sendRecognizedText = async () => {
     if (!recognizedText.trim() || loading) {
       if (!recognizedText.trim()) {
-        Alert.alert("No Speech", "No speech was recognized. Please try again.");
+        safeAlert("No Speech", "No speech was recognized. Please try again.");
       }
       return;
     }
@@ -192,7 +191,7 @@ export default function VoiceRecorder({ onSend, loading = false }) {
       
     } catch (error) {
       console.error("Failed to process recognized text:", error);
-      Alert.alert("Error", "Failed to process your message");
+      safeAlert("Error", "Failed to process your message");
     }
   };
 
@@ -304,10 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#6366F1", // Reverted back to blue
     borderRadius: 12, 
     alignItems: "center",
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   recordingContainer: {
@@ -369,10 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   deleteButton: {
@@ -405,10 +398,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
     elevation: 2,
   },
   buttonText: { 

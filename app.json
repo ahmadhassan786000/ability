@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ability-chatbot",
-    "slug": "ability-chatbot",
+    "name": "ability",
+    "slug": "uzi13-ability-chatbot-2026",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/ability_logo.jpg",
@@ -19,6 +19,7 @@
     },
     "android": {
       "package": "com.abilityapp.chatbot",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/ability_logo.jpg",
@@ -75,7 +76,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "f292b3df-99a2-4b96-be9c-11a606771aa3"
+        "projectId": "ea8b4038-67ff-4574-8b5a-3ffedfa2c1e2"
       }
     }
   }

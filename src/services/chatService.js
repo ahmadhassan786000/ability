@@ -5,8 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  limit,
-  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -148,6 +146,19 @@ export class ChatService {
   async sendMessage(userId, text, messageType = 'text') {
     try {
       console.log("Sending message:", text, "for user:", userId);
+      
+      // Debug: Check Firebase Auth state
+      const { auth } = require('../config/firebase');
+      console.log("Firebase Auth current user:", auth.currentUser ? auth.currentUser.uid : "No user");
+      console.log("Passed userId:", userId);
+      
+      if (!auth.currentUser) {
+        throw new Error("No authenticated user found in Firebase Auth");
+      }
+      
+      if (auth.currentUser.uid !== userId) {
+        console.warn("User ID mismatch:", auth.currentUser.uid, "vs", userId);
+      }
       
       // Get or create active chat
       let activeChat = await this.getActiveChat(userId);
@@ -346,11 +357,10 @@ export class ChatService {
   // Get chat history list for UI
   async getChatHistory(userId) {
     try {
+      // Simple query without orderBy to test
       const chatsQuery = query(
         collection(db, 'chats'),
-        where('userId', '==', userId),
-        orderBy('updatedAt', 'desc'),
-        limit(50)
+        where('userId', '==', userId)
       );
       
       const querySnapshot = await getDocs(chatsQuery);
@@ -370,7 +380,11 @@ export class ChatService {
         }
       });
       
-      return chatHistory;
+      // Sort in JavaScript instead of Firestore
+      chatHistory.sort((a, b) => b.updatedAt - a.updatedAt);
+      
+      // Limit to 50 results
+      return chatHistory.slice(0, 50);
     } catch (error) {
       console.error("Error getting chat history:", error);
       return [];
@@ -505,7 +519,7 @@ export class ChatService {
   // Enhanced AI response generation using Google Gemini REST API with real-time data and semantic analysis
   async generateResponse(text) {
     try {
-      const API_KEY = 'AIzaSyCYg78-drj5-zsraNZZ-Y3HvUcaBzQ06a8';
+      const API_KEY = 'AIzaSyC-EvwaBw7exHSEYBniIl1X4-g4zaqArkk';
       const MODEL = 'gemini-2.5-flash';
       
       // Perform semantic analysis on the input

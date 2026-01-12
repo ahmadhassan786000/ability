@@ -6,13 +6,13 @@ import { Platform } from 'react-native';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCF62wfutBFIlNqeXdRJgEV3U9AndVQ5Ig",
-  authDomain: "abilityapp-577c8.firebaseapp.com",
-  projectId: "abilityapp-577c8",
-  storageBucket: "abilityapp-577c8.firebasestorage.app",
-  messagingSenderId: "196771306016",
-  appId: "1:196771306016:web:0c4f87e2053828b77e3a45",
-  measurementId: "G-HBHTN3PX4F"
+  apiKey: "AIzaSyBze_YjHYm2bALCGci1ARUICVUpv4oo1HU",
+  authDomain: "ability-59841.firebaseapp.com",
+  projectId: "ability-59841",
+  storageBucket: "ability-59841.firebasestorage.app",
+  messagingSenderId: "535132309126",
+  appId: "1:535132309126:web:d4feae31b917f987127307",
+  measurementId: "G-L8FG9EGZ94"
 };
 
 // Initialize Firebase only if it hasn't been initialized already
