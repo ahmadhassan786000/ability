@@ -1,418 +1,294 @@
-# Ability AI Chatbot
+# Ability Chatbot - AI Voice & Text Assistant
 
-A modern React Native chatbot application built with Expo, featuring voice recording, real-time chat, and AI-powered responses using Google's Gemini API.
+A React Native Expo application that provides an intelligent chatbot with both voice and text interaction capabilities. Built with Firebase backend and modern React Native architecture.
 
-## Features
+## 📱 Project Overview
 
-- 🤖 **AI-Powered Chat**: Integrated with Google Gemini API for intelligent responses
-- 🎙️ **Voice Recording**: Voice-to-text functionality with speech recognition
-- 💬 **Real-time Chat**: Instant messaging with typing indicators
-- 📱 **Cross-Platform**: Works on both iOS and Android
-- 🔐 **Firebase Authentication**: Secure user authentication with Firebase Auth
-- � **CloudH Storage**: Chat data stored in Firebase Firestore
-- 💾 **Real-time Sync**: Chat history synced across devices
-- 🎨 **Modern UI**: Clean, responsive design with dark theme
-- 🔍 **Google Search Grounding**: Real-time information beyond AI's knowledge cutoff
+Ability Chatbot is a cross-platform mobile application that allows users to interact with an AI assistant through both voice commands and text input. The app features real-time chat functionality, voice recognition, text-to-speech, and comprehensive chat history management.
 
-## Quick Setup Checklist
-
-Before you start, make sure you complete these steps:
-
-- [ ] Clone the repository
-- [ ] Install dependencies (`npm install`)
-- [ ] Create Firebase project
-- [ ] Enable Email/Password authentication in Firebase
-- [ ] Create Firestore database
-- [ ] Update Firebase config in `src/config/firebase.js`
-- [ ] Set up Firestore security rules
-- [ ] (Optional) Add your own Gemini API key
-- [ ] Start the development server (`npm start`)
-
-## Prerequisites
-
-Before running this project, make sure you have the following installed:
-
-- **Node.js** (v16 or higher)
-- **npm** or **yarn**
-- **Expo CLI**: `npm install -g @expo/cli`
-- **Git**
-
-### For Mobile Development:
-- **Expo Go** app on your mobile device (iOS/Android)
-- OR **Android Studio** (for Android emulator)
-- OR **Xcode** (for iOS simulator - macOS only)
-
-## Installation & Setup
-
-### 1. Clone the Repository
-```bash
-git clone <your-repository-url>
-cd ability-chatbot
-```
-
-### 2. Install Dependencies
-```bash
-npm install
-# or
-yarn install
-```
-
-### 3. Firebase Setup (Required)
-
-This app uses Firebase for authentication and data storage. You need to create your own Firebase project and configure it:
-
-#### Step 1: Create Firebase Project
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Create a project" or "Add project"
-3. Enter your project name (e.g., "my-chatbot-app")
-4. Enable Google Analytics (optional)
-5. Click "Create project"
-
-#### Step 2: Enable Authentication
-1. In your Firebase project, go to **Authentication** → **Sign-in method**
-2. Enable **Email/Password** provider
-3. Click "Save"
-
-#### Step 3: Create Firestore Database
-1. Go to **Firestore Database** → **Create database**
-2. Choose **Start in test mode** (for development)
-3. Select your preferred location
-4. Click "Done"
-
-#### Step 4: Get Firebase Configuration
-1. Go to **Project Settings** (gear icon) → **General** tab
-2. Scroll down to "Your apps" section
-3. Click **Web app** icon (`</>`)
-4. Register your app with a name (e.g., "Chatbot Web App")
-5. Copy the `firebaseConfig` object
-
-#### Step 5: Update Firebase Configuration
-1. Open `src/config/firebase.js` in your project
-2. Replace the existing `firebaseConfig` object with your configuration:
-
-```javascript
-const firebaseConfig = {
-  apiKey: "your-api-key-here",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.firebasestorage.app",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id",
-  measurementId: "your-measurement-id" // Optional
-};
-```
-
-**Security Note**: For production apps, consider using environment variables to store sensitive configuration. However, for Expo development, the config file approach is standard and secure enough since Firebase client SDKs are designed to be used with public API keys.
-
-#### Step 6: Configure Firestore Security Rules (Important)
-1. Go to **Firestore Database** → **Rules** tab
-2. Replace the default rules with these secure rules:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only access their own data
-    match /chats/{chatId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-    
-    // Active chats - users can only access their own
-    match /activeChats/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // User profiles - users can only access their own
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-3. Click **Publish** to save the rules
-
-#### Step 7: Set Up Gemini AI API (Optional but Recommended)
-The app uses Google's Gemini API for AI responses. To use your own API key:
-
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Open `src/services/chatService.js`
-4. Replace the API key in the `API_KEYS` array:
-
-```javascript
-const API_KEYS = [
-  'your-gemini-api-key-here',
-];
-```
-
-**Note**: The current API key in the code is for demonstration purposes and may have usage limits.
-
-#### Firebase Services Used:
-- **Firebase Authentication**: Email/password user authentication
-- **Firebase Firestore**: Real-time chat data storage and synchronization
-- **Security Rules**: Protect user data with proper access controls
-
-#### Testing Your Firebase Setup:
-1. Start the app: `npm start`
-2. Create a new account using the signup screen
-3. Try logging in with your credentials
-4. Send a test message in the chat
-5. Check your Firebase Console:
-   - **Authentication** → **Users** (should show your account)
-   - **Firestore Database** → **Data** (should show chat collections)
-
-If everything works, your Firebase setup is complete! 🎉
-
-### 4. Start the Development Server
-```bash
-npm start
-# or
-yarn start
-# or
-expo start
-```
-
-### 5. Run on Device/Emulator
-
-#### Option A: Physical Device (Recommended)
-1. Install **Expo Go** app from App Store (iOS) or Google Play Store (Android)
-2. Scan the QR code displayed in terminal/browser
-3. App will load on your device
-
-#### Option B: iOS Simulator (macOS only)
-```bash
-npm run ios
-# or
-yarn ios
-```
-
-#### Option C: Android Emulator
-```bash
-npm run android
-# or
-yarn android
-```
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 ability-chatbot/
-├── app/                          # App screens (Expo Router)
-│   ├── (auth)/                   # Authentication screens
-│   │   ├── login.js             # Login screen
-│   │   ├── signup.js            # Signup screen
-│   │   ├── forgot-password.js   # Password reset
-│   │   └── _layout.js           # Auth layout
-│   ├── chat.js                  # Main chat screen
-│   ├── chat-history.js          # Chat history screen
-│   ├── profile.js               # User profile
-│   ├── welcome.js               # Welcome screen
-│   ├── index.js                 # Home/redirect screen
-│   └── _layout.js               # Root layout
-├── src/
-│   ├── components/              # Reusable components
-│   │   ├── ChatBubble.js        # Chat message bubbles
-│   │   ├── VoiceRecorder.js     # Voice recording component
-│   │   └── TextInputBox.js      # Text input component
-│   ├── context/                 # React Context
-│   │   └── AuthContext.js       # Authentication context
-│   ├── hooks/                   # Custom hooks
-│   │   └── useAuth.js           # Authentication hook
-│   ├── services/                # API services
-│   │   └── chatService.js       # Chat and AI service
-│   └── styles/                  # Styling
-│       └── designSystem.js      # Design tokens
-├── assets/                      # Static assets
-│   └── images/                  # App images and icons
-├── package.json                 # Dependencies
-├── app.json                     # Expo configuration
-└── eas.json                     # Expo Application Services config
+├── .expo/                          # Expo configuration and cache
+│   ├── devices.json                # Connected devices info
+│   ├── README.md                   # Expo setup instructions
+│   └── settings.json               # Expo project settings
+├── .git/                           # Git version control
+├── .vscode/                        # VS Code workspace settings
+├── app/                            # Main application screens (Expo Router)
+│   ├── (auth)/                     # Authentication flow
+│   │   ├── forgot-password.js      # Password reset screen
+│   │   ├── login.js                # User login screen
+│   │   ├── signup.js               # User registration screen
+│   │   └── _layout.js              # Auth layout wrapper
+│   ├── chat-history.js             # Chat history management screen
+│   ├── chat.js                     # Main chat interface
+│   ├── index.js                    # App entry point & routing logic
+│   ├── profile.js                  # User profile management
+│   ├── welcome.js                  # Welcome/onboarding screen
+│   └── _layout.js                  # Root layout with providers
+├── assets/                         # Static assets
+│   └── images/
+│       └── ability_logo.jpg        # App logo and branding
+├── src/                            # Source code organization
+│   ├── components/                 # Reusable UI components
+│   │   ├── Button.js               # Custom button component
+│   │   ├── ChatBubble.js           # Message display component
+│   │   ├── CircleLoader.js         # Loading animation
+│   │   ├── ErrorBoundary.js        # Error handling wrapper
+│   │   ├── Input.js                # Text input component
+│   │   ├── LoadingScreen.js        # Full-screen loading
+│   │   ├── TextInputBox.js         # Chat text input
+│   │   └── VoiceRecorder.js        # Voice recording interface
+│   ├── config/                     # Configuration files
+│   │   └── firebase.js             # Firebase setup & initialization
+│   ├── context/                    # React Context providers
+│   │   └── AuthContext.js          # Authentication state management
+│   ├── hooks/                      # Custom React hooks
+│   │   └── useAuth.js              # Authentication hook
+│   ├── services/                   # Business logic & API services
+│   │   ├── authService.js          # Authentication operations
+│   │   ├── chatService.js          # Chat & messaging logic
+│   │   ├── voiceNavigationService.js # Voice command processing
+│   │   └── voiceService.js         # Voice recording & TTS
+│   ├── styles/                     # Design system & styling
+│   └── utils/                      # Utility functions & helpers
+├── app.json                        # Expo app configuration
+├── eas.json                        # EAS Build configuration
+├── eslint.config.js                # ESLint configuration
+├── package.json                    # Dependencies & scripts
+└── package-lock.json               # Dependency lock file
 ```
 
-## Key Technologies
+## 🚀 Key Features
 
-- **React Native** - Mobile app framework
-- **Expo** - Development platform and tools
-- **Expo Router** - File-based routing
-- **Firebase Authentication** - User authentication and management
-- **Firebase Firestore** - Real-time cloud database
-- **Google Gemini API** - AI responses with search grounding
-- **Expo Speech Recognition** - Voice-to-text functionality
-- **Expo Speech** - Text-to-speech for voice responses
-- **Expo Haptics** - Tactile feedback
+### 🎯 Core Functionality
+- **Dual Interface**: Text and voice chat modes
+- **Real-time Messaging**: Instant chat with AI assistant
+- **Voice Recognition**: Speech-to-text input processing
+- **Text-to-Speech**: AI responses with voice output
+- **Chat History**: Persistent conversation management
+- **User Authentication**: Secure Firebase authentication
 
-## Features Overview
+### 🎙️ Voice Features
+- Voice command navigation
+- Hands-free chat interaction
+- Voice input mode for messages
+- Automatic speech recognition
+- Voice navigation between screens
 
-### Authentication System
-- Firebase Authentication with email/password
-- Secure user registration and login
-- Real-time authentication state management
-- Password reset functionality
-- User profile management
+### 💬 Chat Features
+- Real-time message synchronization
+- Chat session management
+- Message history persistence
+- Chat search functionality
+- Conversation summarization
 
-### Chat Features
-- Real-time messaging interface with Firestore
-- AI-powered responses using Gemini API
-- Voice recording with speech-to-text
-- Text-to-speech for AI responses
-- Cloud-based chat history and session management
-- Real-time synchronization across devices
-- Typing indicators and loading states
+## 📂 Detailed File Structure
 
-### Voice Integration
-- Voice recording with visual feedback
-- Speech recognition for message input
-- AI response playback with speech synthesis
-- Automatic speech cleanup on navigation
+### `/app` - Application Screens (Expo Router)
+The main application screens using Expo Router for navigation:
 
-### UI/UX Features
-- Dark theme design
-- Smooth animations and transitions
-- Responsive layout for different screen sizes
-- Professional chat interface
-- Loading states and error handling
+- **`_layout.js`**: Root layout providing authentication context and navigation setup
+- **`index.js`**: Entry point handling authentication routing logic
+- **`welcome.js`**: Onboarding screen with voice navigation setup
+- **`chat.js`**: Main chat interface supporting both text and voice modes
+- **`chat-history.js`**: Chat history management and search
+- **`profile.js`**: User profile and settings management
 
-## Troubleshooting
+#### `/app/(auth)` - Authentication Flow
+- **`_layout.js`**: Authentication layout wrapper
+- **`login.js`**: User login with email/password
+- **`signup.js`**: User registration with validation
+- **`forgot-password.js`**: Password reset functionality
 
-### Common Issues
+### `/src/components` - Reusable UI Components
+Modular, reusable React Native components:
 
-1. **Metro bundler issues**:
-   ```bash
-   npx expo start --clear
-   ```
+- **`Button.js`**: Customizable button with loading states
+- **`ChatBubble.js`**: Message display with user/AI differentiation
+- **`CircleLoader.js`**: Animated loading indicator
+- **`ErrorBoundary.js`**: Error handling and recovery
+- **`Input.js`**: Styled text input with validation
+- **`LoadingScreen.js`**: Full-screen loading with customization
+- **`TextInputBox.js`**: Chat-specific text input with send functionality
+- **`VoiceRecorder.js`**: Voice recording interface with visual feedback
 
-2. **Node modules issues**:
-   ```bash
-   rm -rf node_modules
-   npm install
-   ```
+### `/src/services` - Business Logic Layer
+Core application services and API integrations:
 
-3. **Expo cache issues**:
-   ```bash
-   npx expo install --fix
-   ```
+- **`authService.js`**: Firebase authentication operations
+  - User registration, login, logout
+  - Password reset functionality
+  - Profile management
+  
+- **`chatService.js`**: Chat and messaging operations
+  - Real-time message synchronization
+  - Chat session management
+  - Message history and search
+  - AI response integration
+  
+- **`voiceNavigationService.js`**: Voice command processing
+  - Voice command recognition
+  - Navigation control via voice
+  - Voice input mode management
+  
+- **`voiceService.js`**: Voice recording and text-to-speech
+  - Audio recording functionality
+  - Speech synthesis for AI responses
 
-4. **iOS simulator not working**:
-   - Make sure Xcode is installed (macOS only)
-   - Try: `npx expo run:ios`
+### `/src/config` - Configuration
+- **`firebase.js`**: Firebase initialization and configuration
+  - Authentication setup
+  - Firestore database connection
+  - Platform-specific persistence
 
-5. **Android emulator not working**:
-   - Make sure Android Studio is installed
-   - Start an Android Virtual Device (AVD)
-   - Try: `npx expo run:android`
+### `/src/context` - State Management
+- **`AuthContext.js`**: Global authentication state
+  - User session management
+  - Authentication status tracking
+  - Profile data synchronization
 
-### Firebase Issues
+### `/src/hooks` - Custom React Hooks
+- **`useAuth.js`**: Authentication hook providing user state and auth methods
 
-6. **Authentication not working**:
-   - Verify your Firebase config in `src/config/firebase.js`
-   - Check if Email/Password is enabled in Firebase Console
-   - Ensure your app domain is authorized in Firebase Authentication settings
+## 🛠️ Technology Stack
 
-7. **Firestore permission denied**:
-   - Check your Firestore security rules
-   - Make sure users are authenticated before accessing data
-   - Verify the rules match the structure provided in setup
+### Frontend
+- **React Native**: Cross-platform mobile development
+- **Expo**: Development platform and build system
+- **Expo Router**: File-based navigation system
+- **React Context**: State management
+- **React Hooks**: Component logic organization
 
-8. **Firebase initialization errors**:
-   - Clear app data/cache on your device
-   - Restart the development server
-   - Check for typos in your Firebase configuration
+### Backend & Services
+- **Firebase Authentication**: User management
+- **Firebase Firestore**: Real-time database
+- **Expo Speech**: Text-to-speech functionality
+- **Expo Speech Recognition**: Voice input processing
+- **Expo Audio**: Voice recording capabilities
 
-9. **Chat data not syncing**:
-   - Check your internet connection
-   - Verify Firestore rules allow read/write for authenticated users
-   - Check browser/device console for Firebase errors
+### Development Tools
+- **EAS Build**: Cloud build service
+- **ESLint**: Code linting and formatting
+- **TypeScript**: Type checking (configured)
+- **Expo Dev Client**: Development builds
 
-10. **Gemini AI not responding**:
-    - Verify your Gemini API key is valid
-    - Check API key usage limits in Google AI Studio
-    - Ensure you have internet connection for API calls
+## 📱 App Flow
 
-### Performance Tips
+### Authentication Flow
+1. **App Launch** → `app/index.js` checks authentication status
+2. **Unauthenticated** → Redirect to `app/(auth)/login.js`
+3. **Registration** → `app/(auth)/signup.js` → Email verification
+4. **Login** → `app/(auth)/login.js` → Authentication via Firebase
+5. **Authenticated** → Redirect to `app/welcome.js`
 
-- Use physical device for better performance
-- Close other apps while testing
-- Use `--dev false` flag for production-like performance
-- Clear Expo cache if experiencing issues
+### Main App Flow
+1. **Welcome Screen** → Voice navigation setup and mode selection
+2. **Chat Interface** → `app/chat.js` with text/voice modes
+3. **Voice Commands** → Processed by `voiceNavigationService.js`
+4. **Messages** → Managed by `chatService.js` with real-time sync
+5. **Chat History** → Accessible via sidebar or `app/chat-history.js`
 
-## Development Commands
+### Voice Interaction Flow
+1. **Voice Activation** → User enables voice navigation
+2. **Command Recognition** → Speech-to-text processing
+3. **Command Processing** → Navigation or message handling
+4. **AI Response** → Text-to-speech output
+5. **Continuous Listening** → Auto-restart for hands-free operation
+
+## 🔧 Configuration Files
+
+### `app.json`
+Expo application configuration including:
+- App metadata (name, version, icon)
+- Platform-specific settings (iOS/Android)
+- Plugin configurations (audio, speech recognition)
+- Build and deployment settings
+
+### `eas.json`
+EAS Build configuration for:
+- Development builds with dev client
+- Preview builds for testing
+- Production builds for app stores
+
+### `package.json`
+Project dependencies and scripts:
+- Expo and React Native core
+- Firebase SDK
+- Audio and speech libraries
+- Development and build tools
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v16 or higher)
+- Expo CLI
+- iOS Simulator or Android Emulator
+- Firebase project setup
+
+### Installation
+```bash
+# Clone the repository
+git clone <repository-url>
+
+# Install dependencies
+npm install
+
+# Start development server
+npx expo start
+
+# For development builds
+eas build --profile development --platform all
+```
+
+### Development Builds
+The app uses Expo Dev Client for development builds that support both platforms from a single QR code:
 
 ```bash
-# Start development server
-npm start
+# Build for both platforms
+eas build --profile development --platform all
 
-# Start with cache cleared
-npx expo start --clear
-
-# Run on iOS simulator
-npm run ios
-
-# Run on Android emulator
-npm run android
-
-# Run on web (limited functionality)
-npm run web
-
-# Check for issues
-npx expo doctor
-
-# Update Expo SDK
-npx expo install --fix
+# Build for specific platform
+eas build --profile development --platform ios
+eas build --profile development --platform android
 ```
 
-## Building for Production
+## 🔐 Environment Setup
 
-### Using Expo Application Services (EAS)
+### Firebase Configuration
+1. Create a Firebase project
+2. Enable Authentication and Firestore
+3. Update `src/config/firebase.js` with your config
+4. Configure authentication providers
 
-1. **Install EAS CLI**:
-   ```bash
-   npm install -g eas-cli
-   ```
+### Voice Services
+The app requires microphone permissions for voice functionality:
+- iOS: Configured in `app.json` with usage descriptions
+- Android: Permissions declared in `app.json`
 
-2. **Login to Expo**:
-   ```bash
-   eas login
-   ```
+## 📋 Features in Detail
 
-3. **Configure build**:
-   ```bash
-   eas build:configure
-   ```
+### Chat Management
+- Real-time message synchronization
+- Persistent chat history
+- Chat search and filtering
+- Conversation summarization
+- Multi-session support
 
-4. **Build for Android**:
-   ```bash
-   eas build --platform android
-   ```
+### Voice Navigation
+- Hands-free app navigation
+- Voice command processing
+- Context-aware responses
+- Automatic listening restart
+- Speech interruption handling
 
-5. **Build for iOS**:
-   ```bash
-   eas build --platform ios
-   ```
+### User Experience
+- Dark theme optimized design
+- Smooth animations and transitions
+- Keyboard handling
+- Loading states and error handling
+- Responsive layout for different screen sizes
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Commit: `git commit -m 'Add feature'`
-5. Push: `git push origin feature-name`
-6. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-If you encounter any issues or have questions:
-
-1. Check the troubleshooting section above
-2. Review Expo documentation: https://docs.expo.dev/
-3. Check React Native documentation: https://reactnative.dev/
-4. Create an issue in the repository
-
----
-
-**Happy Coding! 🚀**
+This README provides a comprehensive overview of the Ability Chatbot project structure, making it easy for developers to understand the codebase organization and contribute to the project.

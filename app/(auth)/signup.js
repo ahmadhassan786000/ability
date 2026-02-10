@@ -3,6 +3,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Dimensions,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
 import Input from '../../src/components/Input';
 import { useAuth } from '../../src/hooks/useAuth';
-import { BorderRadius, Shadows, Spacing, Typography } from '../../src/styles/designSystem';
+import { BorderRadius, Spacing } from '../../src/styles/designSystem';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function SignupScreen() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.trim().length < 3) {
@@ -47,25 +48,25 @@ export default function SignupScreen() {
     } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username.trim())) {
       newErrors.username = 'Username can only contain letters, numbers, and underscores';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,16 +75,16 @@ export default function SignupScreen() {
     if (!validateForm()) return;
 
     setLoading(true);
-    
+
     // Small delay to help with keyboard dismissal
     setTimeout(async () => {
       try {
         await signup(formData.username.trim(), formData.email.trim(), formData.password);
         Alert.alert(
-          'Account Created Successfully!', 
+          'Account Created Successfully!',
           `Welcome ${formData.username}! Your account has been created. You can now sign in with your credentials.`,
-          [{ 
-            text: 'Continue to Login', 
+          [{
+            text: 'Continue to Login',
             onPress: () => {
               // Navigate to login with pre-filled email
               router.push({
@@ -96,15 +97,15 @@ export default function SignupScreen() {
       } catch (err) {
         // Show specific error message
         const errorMessage = err.message || 'Unable to create account. Please try again.';
-        
+
         if (err.message && err.message.includes('already exists')) {
           Alert.alert(
-            'Account Already Exists', 
+            'Account Already Exists',
             'An account with this email already exists. Would you like to sign in instead?',
             [
               { text: 'Cancel', style: 'cancel' },
-              { 
-                text: 'Sign In', 
+              {
+                text: 'Sign In',
                 onPress: () => router.push('/(auth)/login')
               }
             ]
@@ -119,12 +120,15 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+    <SafeAreaView
+      style={styles.container}
+      edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+    >
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
           keyboardShouldPersistTaps="handled"
@@ -133,8 +137,8 @@ export default function SignupScreen() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Image 
-                  source={require('../../assets/images/ability_logo.jpg')} 
+                <Image
+                  source={require('../../assets/images/ability_logo.jpg')}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />
@@ -155,7 +159,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 error={errors.username}
-                leftIcon={<Ionicons name="person" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="person" size={20} color="#10B981" />}
               />
 
               <Input
@@ -167,7 +171,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 error={errors.email}
-                leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="mail" size={20} color="#10B981" />}
               />
 
               <Input
@@ -179,7 +183,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 error={errors.password}
-                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#10B981" />}
               />
 
               <Input
@@ -191,7 +195,7 @@ export default function SignupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 error={errors.confirmPassword}
-                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#10B981" />}
               />
 
               <Button
@@ -218,106 +222,115 @@ export default function SignupScreen() {
   );
 }
 
+
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Dark slate background
+    backgroundColor: '#0F172A',
   },
-  
+
   keyboardView: {
     flex: 1,
   },
-  
+
   scrollContent: {
     flexGrow: 1,
-    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
-    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+    paddingVertical: 20,
   },
-  
+
   content: {
-    paddingHorizontal: Spacing.md,
-    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    paddingHorizontal: Spacing.lg,
+    maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
   },
-  
+
   header: {
     alignItems: 'center',
-    paddingVertical: Spacing.sm, // کم padding
+    paddingVertical: Spacing.xl,
   },
-  
+
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40, // Half of width/height for perfect circle
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)', // Green tint for signup
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
-    ...Shadows.xl,
-    borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-    overflow: 'hidden', // This ensures image stays within circle bounds
-  },
-  
-  logoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40, // Make the image itself circular
-  },
-  
-  title: {
-    fontSize: 24, // چھوٹا title
-    fontWeight: Typography.fontWeight.bold,
-    color: '#F8FAFC', // Light text
-    marginBottom: Spacing.xs, // کم margin
-    textAlign: 'center',
-  },
-  
-  subtitle: {
-    fontSize: 14, // چھوٹا subtitle
-    color: '#94A3B8', // Muted light text
-    textAlign: 'center',
-    lineHeight: 18, // کم line height
-    fontWeight: '400',
-  },
-  
-  form: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)', // Semi-transparent dark card
-    padding: Spacing.md, // کم padding
-    borderRadius: BorderRadius.xl,
-    marginTop: Spacing.sm, // کم margin
+    marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)', // Green accent border
-    ...Shadows.xl,
-    backdropFilter: 'blur(10px)',
+    borderColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
   },
-  
+
+  logoImage: {
+    width: 90,
+    height: 90,
+  },
+
+  title: {
+    fontSize: Math.min(32, width * 0.08),
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  subtitle: {
+    fontSize: 16,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+
+  form: {
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
+    marginTop: Spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)', // Green border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+
   signupButton: {
-    marginTop: Spacing.sm, // کم margin
-    backgroundColor: '#10B981', // Green button
-    borderRadius: BorderRadius.lg,
-    ...Shadows.lg,
-    elevation: 6,
-    paddingVertical: Spacing.sm, // کم padding
+    marginTop: Spacing.lg,
+    backgroundColor: '#10B981',
+    borderRadius: BorderRadius.full,
+    paddingVertical: 14,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  
+
   footer: {
     alignItems: 'center',
-    paddingVertical: Spacing.sm, // کم padding
-    marginTop: Spacing.sm, // کم margin
+    paddingVertical: Spacing.xl,
+    marginTop: Spacing.md,
   },
-  
+
   footerText: {
-    fontSize: 16, // Larger text
-    color: '#CBD5E1', // Lighter gray for better visibility
+    fontSize: 15,
+    color: '#94A3B8',
     textAlign: 'center',
   },
-  
+
   linkText: {
-    color: '#22D3EE', // Bright cyan for better visibility
-    fontWeight: Typography.fontWeight.semiBold,
-    textDecorationLine: 'underline',
+    color: '#10B981',
+    fontWeight: '700',
   },
 });

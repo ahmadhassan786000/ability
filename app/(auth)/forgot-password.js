@@ -2,6 +2,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
 import Input from '../../src/components/Input';
 import { useAuth } from '../../src/hooks/useAuth';
-import { BorderRadius, Shadows, Spacing, Typography } from '../../src/styles/designSystem';
+import { BorderRadius, Spacing } from '../../src/styles/designSystem';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -41,29 +42,29 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     setErrors({});
-    
+
     if (!email.trim()) {
       setErrors({ email: 'Email address is required' });
       return;
     }
-    
+
     if (!validateEmail(email.trim())) {
       setErrors({ email: 'Please enter a valid email address' });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       console.log('Attempting to send reset email to:', email.trim());
       const result = await resetPassword(email.trim());
       console.log('Reset password result:', result);
-      
+
       setEmailSent(true);
-      
+
       safeAlert(
         'Password Reset Email Sent!',
-        `We've sent password reset instructions to ${email.trim()}.\n\n⚠️ IMPORTANT: Check your SPAM/JUNK folder if you don't see the email in your inbox within 2-3 minutes.\n\nThe email will come from: noreply@ability-59841.firebaseapp.com`,
+        `We've sent password reset instructions to ${email.trim()}.\n\n⚠️ IMPORTANT: Check your SPAM/JUNK folder if you don't see the email in your inbox within 2-3 minutes.`,
         [{
           text: 'Back to Login',
           onPress: () => {
@@ -85,7 +86,10 @@ export default function ForgotPasswordScreen() {
   // Show success screen if email was sent
   if (emailSent) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={styles.container}
+        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+      >
         <View style={styles.content}>
           <View style={styles.header}>
             <View style={styles.logoContainer}>
@@ -103,13 +107,13 @@ export default function ForgotPasswordScreen() {
               {'\n\n'}
               ⚠️ If you don't see the email in your inbox, please check your SPAM/JUNK folder. The email comes from: noreply@ability-59841.firebaseapp.com
             </Text>
-            
+
             <Button
               title="Back to Login"
               onPress={() => router.push('/(auth)/login')}
               style={styles.resetButton}
             />
-            
+
             <Button
               title="Resend Email"
               onPress={() => {
@@ -125,12 +129,15 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+    <SafeAreaView
+      style={styles.container}
+      edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+    >
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
           keyboardShouldPersistTaps="handled"
@@ -185,131 +192,139 @@ export default function ForgotPasswordScreen() {
   );
 }
 
+
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Dark slate background
+    backgroundColor: '#0F172A',
   },
-  
+
   keyboardView: {
     flex: 1,
   },
-  
+
   scrollContent: {
     flexGrow: 1,
-    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
-    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+    paddingVertical: 20,
   },
-  
+
   content: {
-    paddingHorizontal: Spacing.md,
-    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    paddingHorizontal: Spacing.lg,
+    maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
   },
-  
+
   header: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
-  
+
   logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.full,
-    backgroundColor: '#F59E0B', // Orange for forgot password
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)', // Orange tint
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
-    ...Shadows.xl,
-    borderWidth: 3,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  
+
   logo: {
-    fontSize: 28,
+    fontSize: 40,
   },
-  
+
   title: {
-    fontSize: 28,
-    fontWeight: Typography.fontWeight.bold,
-    color: '#F8FAFC', // Light text
-    marginBottom: Spacing.xs,
+    fontSize: Math.min(28, width * 0.08),
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
-  
+
   subtitle: {
     fontSize: 16,
-    color: '#94A3B8', // Muted light text
+    color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 22,
-    fontWeight: '400',
+    lineHeight: 24,
+    paddingHorizontal: Spacing.sm,
   },
-  
+
   form: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)', // Semi-transparent dark card
-    padding: Spacing.lg,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    padding: Spacing.xl,
     borderRadius: BorderRadius.xl,
     marginTop: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.2)', // Orange accent border
-    ...Shadows.xl,
-    backdropFilter: 'blur(10px)',
+    borderColor: 'rgba(245, 158, 11, 0.2)', // Orange border
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  
+
   inputIcon: {
-    fontSize: 18,
+    fontSize: 20,
   },
-  
+
   resetButton: {
-    marginTop: Spacing.md,
-    backgroundColor: '#F59E0B', // Orange button
-    borderRadius: BorderRadius.lg,
-    ...Shadows.lg,
-    elevation: 6,
-    paddingVertical: Spacing.md,
+    marginTop: Spacing.lg,
+    backgroundColor: '#F59E0B',
+    borderRadius: BorderRadius.full,
+    paddingVertical: 14,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  
+
   secondaryButton: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#F59E0B',
+    marginTop: Spacing.md,
   },
-  
+
   footer: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
     marginTop: Spacing.md,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)', // Slightly different background
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
   },
-  
+
   footerText: {
-    fontSize: 16, // Larger text
-    color: '#CBD5E1', // Lighter gray for better visibility
+    fontSize: 15,
+    color: '#94A3B8',
     textAlign: 'center',
   },
-  
+
   linkText: {
-    color: '#FCD34D', // Bright yellow-orange for better visibility
-    fontWeight: Typography.fontWeight.semiBold,
-    textDecorationLine: 'underline',
+    color: '#F59E0B',
+    fontWeight: '700',
   },
-  
+
   instructionText: {
-    fontSize: 14,
-    color: '#94A3B8', // Muted light text
+    fontSize: 15,
+    color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.sm,
+    lineHeight: 24,
+    marginBottom: Spacing.lg,
   },
-  
+
   errorText: {
     fontSize: 14,
-    color: '#F87171', // Light red for error
+    color: '#F87171',
     textAlign: 'center',
     marginBottom: Spacing.md,
   },

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     FlatList,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -152,7 +153,10 @@ const formatDate = (timestamp) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView 
+        style={styles.container}
+        edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+      >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Chat History</Text>
         </View>
@@ -164,7 +168,10 @@ const formatDate = (timestamp) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView 
+      style={styles.container}
+      edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+    >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Chat History</Text>
         <TouchableOpacity
@@ -208,13 +215,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs, // Minimal padding
+    paddingVertical: 4, // Very minimal vertical padding (same as others)
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    minHeight: 44, // Same minimum height as others
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xl,
+    fontSize: Typography.fontSize.xl, // Same as profile header
     fontWeight: Typography.fontWeight.bold,
     color: Colors.gray900,
   },

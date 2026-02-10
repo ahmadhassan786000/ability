@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import {
-    BorderRadius,
-    Colors,
-    Shadows,
-    Spacing,
-    Typography,
+  BorderRadius,
+  Colors,
+  Shadows,
+  Spacing,
+  Typography,
 } from '../styles/designSystem';
 
 // Animated Typing Dots Component
@@ -86,7 +86,7 @@ export default function ChatBubble({ message, currentUserId }) {
   const isUser = message.userId === currentUserId;
   const isLoading = message.type === 'loading';
   const isError = message.type === 'error';
-  
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -95,7 +95,7 @@ export default function ChatBubble({ message, currentUserId }) {
   return (
     <View style={[styles.container, isUser ? styles.userContainer : styles.aiContainer]}>
       <View style={[
-        styles.bubble, 
+        styles.bubble,
         isUser ? styles.userBubble : styles.aiBubble,
         isLoading && styles.loadingBubble,
         isError && styles.errorBubble
@@ -109,17 +109,17 @@ export default function ChatBubble({ message, currentUserId }) {
           </View>
         ) : (
           <Text style={[
-            styles.text, 
+            styles.text,
             isUser ? styles.userText : styles.aiText,
             isError && styles.errorText
           ]}>
             {message.text}
           </Text>
         )}
-        
+
         {!isLoading && (
           <Text style={[
-            styles.timestamp, 
+            styles.timestamp,
             isUser ? styles.userTimestamp : styles.aiTimestamp
           ]}>
             {formatTime(message.timestamp)}
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   text: {
-    fontSize: Typography.fontSize.sm, // Reduced from base (16px) to sm (14px)
-    lineHeight: 18, // Adjusted line height proportionally
+    fontSize: 12, // Reverted to previous size
+    lineHeight: 17, // Adjusted line height
     marginBottom: Spacing.xs,
   },
   userText: {

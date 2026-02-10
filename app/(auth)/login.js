@@ -2,20 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
-    ScrollView
+  Alert,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../src/components/Button';
 import Input from '../../src/components/Input';
 import { useAuth } from '../../src/hooks/useAuth';
-import { BorderRadius, Shadows, Spacing, Typography } from '../../src/styles/designSystem';
+import { BorderRadius, Spacing } from '../../src/styles/designSystem';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -35,19 +36,19 @@ export default function LoginScreen() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -62,15 +63,15 @@ export default function LoginScreen() {
     } catch (err) {
       // Show specific error message with helpful suggestions
       const errorMessage = err.message || 'Please check your credentials and try again.';
-      
+
       if (err.message && err.message.includes('No account found')) {
         Alert.alert(
-          'Account Not Found', 
+          'Account Not Found',
           'No account exists with this email address. Would you like to create a new account?',
           [
             { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Sign Up', 
+            {
+              text: 'Sign Up',
               onPress: () => router.push('/(auth)/signup')
             }
           ]
@@ -84,12 +85,15 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+    <SafeAreaView
+      style={styles.container}
+      edges={Platform.OS === 'ios' ? ['top', 'bottom'] : ['bottom']}
+    >
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
           keyboardShouldPersistTaps="handled"
@@ -98,8 +102,8 @@ export default function LoginScreen() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <Image 
-                  source={require('../../assets/images/ability_logo.jpg')} 
+                <Image
+                  source={require('../../assets/images/ability_logo.jpg')}
                   style={styles.logoImage}
                   resizeMode="contain"
                 />
@@ -122,7 +126,7 @@ export default function LoginScreen() {
                 autoCorrect={false}
                 returnKeyType="next"
                 error={errors.email}
-                leftIcon={<Ionicons name="mail" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="mail" size={20} color="#6366F1" />}
               />
 
               <Input
@@ -136,7 +140,7 @@ export default function LoginScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
                 error={errors.password}
-                leftIcon={<Ionicons name="lock-closed" size={20} color="#3B82F6" />}
+                leftIcon={<Ionicons name="lock-closed" size={20} color="#6366F1" />}
               />
 
               <Button
@@ -171,125 +175,126 @@ export default function LoginScreen() {
   );
 }
 
+
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Dark slate background
+    backgroundColor: '#0F172A',
   },
-  
+
   keyboardView: {
     flex: 1,
   },
-  
+
   scrollContent: {
     flexGrow: 1,
-    minHeight: Platform.OS === 'web' ? '100vh' : undefined,
     justifyContent: 'center',
-    paddingVertical: Platform.OS === 'web' ? 40 : 20,
+    paddingVertical: 20,
   },
-  
+
   content: {
-    paddingHorizontal: Spacing.md,
-    maxWidth: Platform.OS === 'web' ? 400 : undefined,
+    paddingHorizontal: Spacing.lg,
+    maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
   },
-  
+
   header: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
-  
+
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40, // Half of width/height for perfect circle
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: 'rgba(99, 102, 241, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
-    ...Shadows.xl,
-    borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.3)',
-    overflow: 'hidden', // This ensures image stays within circle bounds
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
   },
-  
+
   logoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40, // Make the image itself circular
+    width: 100,
+    height: 100,
   },
-  
-  logo: {
-    fontSize: 28,
-  },
-  
+
   title: {
-    fontSize: 28,
-    fontWeight: Typography.fontWeight.bold,
-    color: '#F8FAFC', // Light text
-    marginBottom: Spacing.xs,
+    fontSize: Math.min(32, width * 0.08),
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
-  
+
   subtitle: {
     fontSize: 16,
-    color: '#94A3B8', // Muted light text
+    color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 22,
-    fontWeight: '400',
+    lineHeight: 24,
   },
-  
+
   form: {
-    backgroundColor: 'rgba(30, 41, 59, 0.8)', // Semi-transparent dark card
-    padding: Spacing.lg,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    padding: Spacing.xl,
     borderRadius: BorderRadius.xl,
     marginTop: Spacing.lg,
     borderWidth: 1,
     borderColor: 'rgba(99, 102, 241, 0.2)',
-    ...Shadows.xl,
-    backdropFilter: 'blur(10px)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  
+
   loginButton: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
     backgroundColor: '#6366F1',
-    borderRadius: BorderRadius.lg,
-    ...Shadows.lg,
-    elevation: 6,
-    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    paddingVertical: 14,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  
+
   forgotPasswordContainer: {
     alignItems: 'center',
     marginTop: Spacing.lg,
   },
-  
+
   forgotPasswordText: {
-    fontSize: Typography.fontSize.base,
-    color: '#A78BFA', // Light purple for better visibility
-    fontWeight: Typography.fontWeight.medium,
-    textDecorationLine: 'underline',
+    fontSize: 14,
+    color: '#A78BFA',
+    fontWeight: '600',
   },
-  
+
   footer: {
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
     marginTop: Spacing.md,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)', // Slightly different background
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
   },
-  
+
   footerText: {
-    fontSize: 16, // Larger text
-    color: '#CBD5E1', // Lighter gray for better visibility
+    fontSize: 15,
+    color: '#94A3B8',
     textAlign: 'center',
   },
-  
+
   linkText: {
-    color: '#A78BFA', // Light purple accent for better visibility
-    fontWeight: Typography.fontWeight.semiBold,
-    textDecorationLine: 'underline',
+    color: '#6366F1',
+    fontWeight: '700',
   },
 });
